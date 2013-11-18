@@ -1,0 +1,14 @@
+#ifndef ASTAR_H
+#define ASTAR_H
+
+#include "AStarNode.h"
+#include <Eigen/Dense>
+#include <iostream>
+
+#define GOAL_EPSILON (1.0)
+
+//Cost function definitions
+
+double costToGo(std::array<double, STATE_SPACE_DIM> state, std::array<double, STATE_SPACE_DIM> goalState);
+
+#endif

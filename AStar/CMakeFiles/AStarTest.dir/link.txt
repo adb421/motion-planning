@@ -1,0 +1,1 @@
+/usr/bin/c++    -frounding-math -std=c++0x -O3 -DNDEBUG    CMakeFiles/AStarTest.dir/AStarNode.cpp.o CMakeFiles/AStarTest.dir/AStarTest.cpp.o  -o AStarTest -rdynamic -lmpfr -lgmp -lCGAL -lboost_thread-mt -lpthread -lboost_system-mt -lCGAL -lboost_thread-mt -lpthread -lboost_system-mt 
