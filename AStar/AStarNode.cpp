@@ -200,13 +200,37 @@ std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> 
     return state;
 }
 
-double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> goalState) {
-    Eigen::Matrix<double, 6, 1> stateVec = Eigen::Map<Eigen::MatrixXd>(state.data(), 6, 1);
-    Eigen::Matrix<double, 6, 1> goalVec = Eigen::Map<Eigen::MatrixXd>(goalState.data(), 6, 1);
-    Eigen::Matrix<double, 3, 1> controlVec = Eigen::Map<Eigen::MatrixXd>(controlArray.data(), 3, 1);
-    Eigen::Matrix<double, 3, 1> desControl;
-    desControl << LO, 0, 0;
-//    return ((((goalVec - stateVec).transpose())*Qf*(goalVec - stateVec))(0,0) + (((desControl - controlVec).transpose())*Rf*(desControl - controlVec))(0,0))*INT_TIME_STEP;
-    return ((((desControl - controlVec).transpose())*Rf*(desControl - controlVec))(0,0) + 1)*INT_TIME_STEP;
-}
+// double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> goalState) {
+//     Eigen::Matrix<double, 6, 1> stateVec = Eigen::Map<Eigen::MatrixXd>(state.data(), 6, 1);
+//     Eigen::Matrix<double, 6, 1> goalVec = Eigen::Map<Eigen::MatrixXd>(goalState.data(), 6, 1);
+//     Eigen::Matrix<double, 3, 1> controlVec = Eigen::Map<Eigen::MatrixXd>(controlArray.data(), 3, 1);
+//     Eigen::Matrix<double, 3, 1> desControl;
+//     desControl << LO, 0, 0;
+// //    return ((((goalVec - stateVec).transpose())*Qf*(goalVec - stateVec))(0,0) + (((desControl - controlVec).transpose())*Rf*(desControl - controlVec))(0,0))*INT_TIME_STEP;
+//     return ((((desControl - controlVec).transpose())*Rf*(desControl - controlVec))(0,0) + 1)*INT_TIME_STEP;
+// }
 
+double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> prevState) {
+    double prevTh = prevState[4];
+    double prevXvel = prevState[1];
+    double prevYvel = prevState[3];
+    double prevThVel = prevState[5];
+    Eigen::Vector3d prevBodyVel(prevXVel*cos(prevTh) + prevYVel*sin(prevTh), \
+				prevYVel*cos(prevTh) - prevXVel*sin(prevTh), \
+				prevThVel);
+    double Th = state[4];
+    double Xvel = state[1];
+    double Yvel = state[3];
+    double ThVel = state[5];
+    Eigen::Vector3d bodyVel(XVel*cos(Th) + YVel*sin(Th), \
+			    YVel*cos(Th) - XVel*sin(Th), \
+			    ThVel);
+
+    Eigen::Matrix<double, CONTROL_SPACE_DIM> controlVec = Eigen::Map<Eigen::MatrixXd>(controlArray.data(), CONTROL_SPACE_DIM, 1);
+    Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> desControl;
+    desControl << LO, 0, 0;
+
+    return abs(prevBodyVel.cross(bodyVel)/(prevyBodyVel.norm()*bodyVel.norm())(0,0)) + \
+	((controlVec - desControl).transpose()*R*(controlVec - desControl))(0,0)
+    
+}
