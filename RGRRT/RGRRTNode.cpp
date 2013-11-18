@@ -144,3 +144,20 @@ Eigen::Matrix<double, STATE_SPACE_DIM,1> RandomSample(Eigen::Matrix<double,STATE
 double dist(Eigen::Matrix<double,STATE_SPACE_DIM,1> state1, Eigen::Matrix<double,STATE_SPACE_DIM,1> state2) {
     return (((state1 - state2).transpose())*QDist*(state1-state2))(0,0);
 }
+
+//Create the convex hull of the reachable points
+Convex_hull_d* createConvexHullReachable(std::array<std::array<double,STATE_SPACE_DIM>,NUM_DISC> reachable_states) {
+    //Create an array of Point_d's, use that to make the convex hull?
+    std::vector<Point_d> points;
+    for(int i = 0; i < reachable_states.size(); i++) {
+	points.push_back(Point_d(STATE_SPACE_DIM, reachable_states[i].begin(), reachable_states[i].end()));
+    }
+    Convex_hull_d* con_hull = new Convex_hull_d(6);
+//    CGAL::Convex_hull_d(points.begin(), points.end(), poly);
+    std::vector<Point_d>::iterator it;
+    for(it = points.begin(); it!= points.end(); ++it) {
+	con_hull->insert(*it);
+    }
+    con_hull->is_valid(true);
+    return con_hull;
+}

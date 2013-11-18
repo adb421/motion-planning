@@ -13,6 +13,25 @@
 #include <cmath>
 #include "Parameters.h"
 #include <omp.h>
+//#include <CGAL/Cartesian.h>
+//#include <CGAL/Cartesian_d.h>
+//#include <CGAL/Cartesian.h>
+//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+//#include <CGAL/Kernel_d/Point_d.h>
+#include <CGAL/Homogeneous_d.h>
+#include <CGAL/Homogeneous.h>
+#include <CGAL/Convex_hull_d.h>
+#include <CGAL/double.h>
+
+//typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef double RT;
+//typedef CGAL::Cartesian_d<RT> Kernel;
+//typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+typedef CGAL::Homogeneous_d<RT> Kernel;
+typedef CGAL::Convex_hull_d<Kernel> Convex_hull_d;
+typedef Convex_hull_d::Point_d Point_d;
+typedef Convex_hull_d::Simplex_handle Simplex_handle;
+
 
 class RGRRTNode {
 public:
@@ -58,5 +77,7 @@ Eigen::Matrix<double, STATE_SPACE_DIM,1> spawn(Eigen::Matrix<double, STATE_SPACE
 double dist(Eigen::Matrix<double,STATE_SPACE_DIM,1> state1, Eigen::Matrix<double,STATE_SPACE_DIM,1> state2);
 
 Eigen::Matrix<double, STATE_SPACE_DIM,1> RandomSample(Eigen::Matrix<double,STATE_SPACE_DIM,1> goal);
+
+Convex_hull_d* createConvexHullReachable(std::array<std::array<double,STATE_SPACE_DIM>,NUM_DISC> reachable_states);
 
 #endif

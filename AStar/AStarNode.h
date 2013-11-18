@@ -13,24 +13,6 @@
 #include <cmath>
 #include "../Parameters.h"
 #include <omp.h>
-//#include <CGAL/Cartesian.h>
-//#include <CGAL/Cartesian_d.h>
-//#include <CGAL/Cartesian.h>
-//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-//#include <CGAL/Kernel_d/Point_d.h>
-#include <CGAL/Homogeneous_d.h>
-#include <CGAL/Homogeneous.h>
-#include <CGAL/Convex_hull_d.h>
-#include <CGAL/double.h>
-
-//typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef double RT;
-//typedef CGAL::Cartesian_d<RT> Kernel;
-//typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-typedef CGAL::Homogeneous_d<RT> Kernel;
-typedef CGAL::Convex_hull_d<Kernel> Convex_hull_d;
-typedef Convex_hull_d::Point_d Point_d;
-typedef Convex_hull_d::Simplex_handle Simplex_handle;
 
 
 class AStarNode {
@@ -84,6 +66,6 @@ std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> 
 
 double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> goalState);
 
-Convex_hull_d* createConvexHullReachable(std::array<std::array<double,STATE_SPACE_DIM>,NUM_DISC> reachable_states);
+
 
 #endif
