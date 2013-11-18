@@ -1,11 +1,13 @@
-//#define NDEBUG
+#ifndef NDEBUG
+#define NDEBUG
+#endif
 #include <iostream>
 #include <fstream>
 #include <queue>
 #include "AStarNode.h"
 #include <ctime>
 
-#define MAX_STEPS 20000
+#define MAX_STEPS 10000
 
 int main(int argc, char** argv)
 {

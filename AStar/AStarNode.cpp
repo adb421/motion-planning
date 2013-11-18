@@ -1,13 +1,21 @@
 #include "AStarNode.h"
 
-double Qf_array[36] = {50000.0, 0,   0, 0, 0, 0, \
-		      0,       4.0, 0, 0, 0, 0, \
-		      0,       0,   10000.0, 0, 0, 0, \
-		      0,       0,   0,      4.0, 0, 0, \
-		      0,       0,   0,      0,   1000.0, 0, \
-		      0,       0,   0,      0,   0,      4.0};
+// double Qf_array[36] = {50000.0, 0,   0, 0, 0, 0, \
+// 		      0,       4.0, 0, 0, 0, 0, \
+// 		      0,       0,   10000.0, 0, 0, 0, \
+// 		      0,       0,   0,      4.0, 0, 0, \
+// 		      0,       0,   0,      0,   1000.0, 0, \
+// 		      0,       0,   0,      0,   0,      4.0};
+double Qf_array[STATE_SPACE_DIM*STATE_SPACE_DIM] =			\
+{100/pow((MAX_X - MIN_X),2), 0,   0, 0, 0, 0,				\
+ 0,      100/pow((MAXVEL_XY*2),2), 0, 0, 0, 0,				\
+ 0,       0,   100/pow((MAX_Y - MIN_Y),2), 0, 0, 0,			\
+ 0,       0,   0,      100/pow((MAXVEL_XY*2),2), 0, 0,			\
+ 0,       0,   0,      0,   100/pow((MAX_TH - MIN_TH),2), 0,		\
+ 0,       0,   0,      0,   0,      100/pow((MAXVEL_TH),2)};
+
 double R_array[9] = {1.0, 0,   0, \
-		     0,   1.0, 0, \
+		     0,   0.001, 0, \
 		     0,   0,   10.0};
 Eigen::Matrix<double, 6, 6> Qf = Eigen::Map<Eigen::MatrixXd>(Qf_array, 6, 6);
 Eigen::Matrix<double, 3, 3> Rf = Eigen::Map<Eigen::MatrixXd>(R_array, 3, 3);
@@ -142,16 +150,19 @@ std::vector<AStarNode*> AStarNode::expand()
 //#define TIME_COST 1
 AStarNode* AStarNode::spawn(std::array<double, CONTROL_SPACE_DIM> controlArray) {
     std::array<double, STATE_SPACE_DIM> state = nodeState;
+    std::array<double, STATE_SPACE_DIM> prevState;
     std::array<double, CONTROL_SPACE_DIM> worldControl;
     double time = nodeTime;
     double newCost = cost;
     while(time <= TIME_STEP + nodeTime) {
+	prevState = state;
 	//Map controls from normal/tangent/contact point to world x/y/theta
 	worldControl = MapControlToWorld(state, controlArray);
 	//Euler integrate
 	state = OneStep(state, worldControl);
 	//Increment cost
-	newCost += realCost(state, controlArray, goalState);
+	newCost += realCost(state, controlArray, prevState);
+//	newCost += realCost(state, controlArray, goalState);
 	time += INT_TIME_STEP;
     }
     return new AStarNode(this, state, controlArray, goalState, newCost, time);
@@ -212,25 +223,24 @@ std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> 
 
 double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> prevState) {
     double prevTh = prevState[4];
-    double prevXvel = prevState[1];
-    double prevYvel = prevState[3];
+    double prevXVel = prevState[1];
+    double prevYVel = prevState[3];
     double prevThVel = prevState[5];
     Eigen::Vector3d prevBodyVel(prevXVel*cos(prevTh) + prevYVel*sin(prevTh), \
 				prevYVel*cos(prevTh) - prevXVel*sin(prevTh), \
 				prevThVel);
     double Th = state[4];
-    double Xvel = state[1];
-    double Yvel = state[3];
+    double XVel = state[1];
+    double YVel = state[3];
     double ThVel = state[5];
     Eigen::Vector3d bodyVel(XVel*cos(Th) + YVel*sin(Th), \
 			    YVel*cos(Th) - XVel*sin(Th), \
 			    ThVel);
 
-    Eigen::Matrix<double, CONTROL_SPACE_DIM> controlVec = Eigen::Map<Eigen::MatrixXd>(controlArray.data(), CONTROL_SPACE_DIM, 1);
+    Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> controlVec = Eigen::Map<Eigen::MatrixXd>(controlArray.data(), CONTROL_SPACE_DIM, 1);
     Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> desControl;
     desControl << LO, 0, 0;
-
-    return abs(prevBodyVel.cross(bodyVel)/(prevyBodyVel.norm()*bodyVel.norm())(0,0)) + \
-	((controlVec - desControl).transpose()*R*(controlVec - desControl))(0,0)
+    return VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0)) \
+	+ ((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0);
     
 }
