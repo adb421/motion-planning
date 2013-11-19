@@ -7,12 +7,12 @@
 // 		      0,       0,   0,      0,   1000.0, 0, \
 // 		      0,       0,   0,      0,   0,      4.0};
 double Qf_array[STATE_SPACE_DIM*STATE_SPACE_DIM] =			\
-{100/pow((MAX_X - MIN_X),2), 0,   0, 0, 0, 0,				\
- 0,      100/pow((MAXVEL_XY*2),2), 0, 0, 0, 0,				\
- 0,       0,   100/pow((MAX_Y - MIN_Y),2), 0, 0, 0,			\
- 0,       0,   0,      100/pow((MAXVEL_XY*2),2), 0, 0,			\
- 0,       0,   0,      0,   100/pow((MAX_TH - MIN_TH),2), 0,		\
- 0,       0,   0,      0,   0,      100/pow((MAXVEL_TH),2)};
+{QC/pow((MAX_X - MIN_X),2), 0,   0, 0, 0, 0,				\
+ 0,      QC/pow((MAXVEL_XY*2),2), 0, 0, 0, 0,				\
+ 0,       0,   QC/pow((MAX_Y - MIN_Y),2), 0, 0, 0,			\
+ 0,       0,   0,      QC/pow((MAXVEL_XY*2),2), 0, 0,			\
+ 0,       0,   0,      0,   QC/pow((MAX_TH - MIN_TH),2), 0,		\
+ 0,       0,   0,      0,   0,      QC/pow((MAXVEL_TH),2)};
 
 double R_array[9] = {1.0, 0,   0, \
 		     0,   0.001, 0, \
@@ -229,6 +229,8 @@ double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CO
     Eigen::Vector3d prevBodyVel(prevXVel*cos(prevTh) + prevYVel*sin(prevTh), \
 				prevYVel*cos(prevTh) - prevXVel*sin(prevTh), \
 				prevThVel);
+    if(prevBodyVel.isZero())
+	prevBodyVel << 0.0, 1.0, 0.0;
     double Th = state[4];
     double XVel = state[1];
     double YVel = state[3];
@@ -240,7 +242,22 @@ double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CO
     Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> controlVec = Eigen::Map<Eigen::MatrixXd>(controlArray.data(), CONTROL_SPACE_DIM, 1);
     Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> desControl;
     desControl << LO, 0, 0;
-    return VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0)) \
-	+ ((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0);
+    double temp = (VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0)) + \
+	 ((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0)) * \
+	INT_TIME_STEP;
+    if(temp < 0.0) {
+	std::cout<<"State"<<std::endl;
+	std::cout<<state[0]<<","<<state[1]<<","<<state[2]<<","<<state[3]<<","<<state[4]<<","<<state[5]<<std::endl;
+	std::cout<<"Prev state"<<std::endl;
+	std::cout<<prevState[0]<<","<<prevState[1]<<","<<prevState[2]<<","<<prevState[3]<<","<<prevState[4]<<","<<prevState[5]<<std::endl;
+	std::cout<<"Control"<<std::endl;
+	std::cout<<controlVec<<std::endl;
+	std::cout<<temp<<std::endl;
+    }
+    return temp;
+    // return \
+    // 	(VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0)) + \
+    // 	 ((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0)) * \
+    // 	INT_TIME_STEP;
     
 }
