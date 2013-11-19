@@ -161,7 +161,7 @@ AStarNode* AStarNode::spawn(std::array<double, CONTROL_SPACE_DIM> controlArray) 
 	//Euler integrate
 	state = OneStep(state, worldControl);
 	//Increment cost
-	newCost += realCost(state, controlArray, prevState);
+	newCost += realCost(state, controlArray, prevState, goalState);
 //	newCost += realCost(state, controlArray, goalState);
 	time += INT_TIME_STEP;
     }
@@ -187,14 +187,33 @@ double costToGo(std::array<double, STATE_SPACE_DIM> state, std::array<double, ST
     Eigen::Matrix<double, STATE_SPACE_DIM, 1> stateVec = Eigen::Map<Eigen::MatrixXd>(state.data(), 6, 1);
     Eigen::Matrix<double, STATE_SPACE_DIM, 1> goalVec = Eigen::Map<Eigen::MatrixXd>(goalState.data(), 6, 1);
     Eigen::Matrix<double, STATE_SPACE_DIM, 1> errorVec = stateVec - goalVec;
-    //Quadruple cost if y is below when y velocity is the same
-    if(goalVec(1,0) != 0 && std::signbit(errorVec(0,0)) == std::signbit(goalVec(1,0)))
-       errorVec(0,0) *= 2;
-    if(goalVec(3,0) != 0 && std::signbit(errorVec(2,0)) == std::signbit(goalVec(3,0)))
-	errorVec(2,0) *= 2;
-    if(goalVec(5,0) != 0 && std::signbit(errorVec(3,0)) == std::signbit(goalVec(5,0)))
-	errorVec(3,0) *= 2;
-    return ((errorVec.transpose())*Qf*errorVec)(0,0);
+    //Do velocities also
+    double goalTh = goalState[4];
+    double goalXVel = goalState[1];
+    double goalYVel = goalState[3];
+    double goalThVel = goalState[5];
+    Eigen::Vector3d goalBodyVel(goalXVel*cos(goalTh) + goalYVel*sin(goalTh), \
+				goalYVel*cos(goalTh) - goalXVel*sin(goalTh), \
+				goalThVel);
+    if(goalBodyVel.isZero())
+	goalBodyVel << 0.0, 1.0, 0.0;
+    double Th = state[4];
+    double XVel = state[1];
+    double YVel = state[3];
+    double ThVel = state[5];
+    Eigen::Vector3d bodyVel(XVel*cos(Th) + YVel*sin(Th), \
+			    YVel*cos(Th) - XVel*sin(Th), \
+			    ThVel);
+    double velCost =							\
+	VELSCALE*abs((goalBodyVel.cross(bodyVel)/(goalBodyVel.norm()*bodyVel.norm()))(0,0));    
+    // //Quadruple cost if y is below when y velocity is the same
+    // if(goalVec(1,0) != 0 && std::signbit(errorVec(0,0)) == std::signbit(goalVec(1,0)))
+    //    errorVec(0,0) *= 2;
+    // if(goalVec(3,0) != 0 && std::signbit(errorVec(2,0)) == std::signbit(goalVec(3,0)))
+    // 	errorVec(2,0) *= 2;
+    // if(goalVec(5,0) != 0 && std::signbit(errorVec(3,0)) == std::signbit(goalVec(5,0)))
+    // 	errorVec(3,0) *= 2;
+    return ((errorVec.transpose())*Qf*errorVec)(0,0) + velCost;
 }
 
 std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> worldControl) {
@@ -221,7 +240,7 @@ std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> 
 //     return ((((desControl - controlVec).transpose())*Rf*(desControl - controlVec))(0,0) + 1)*INT_TIME_STEP;
 // }
 
-double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> prevState) {
+double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> prevState, std::array<double, STATE_SPACE_DIM> goalState) {
     double prevTh = prevState[4];
     double prevXVel = prevState[1];
     double prevYVel = prevState[3];
@@ -239,22 +258,19 @@ double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CO
 			    YVel*cos(Th) - XVel*sin(Th), \
 			    ThVel);
 
+    Eigen::Matrix<double, 6, 1> stateVec = Eigen::Map<Eigen::MatrixXd>(state.data(), 6, 1);
+    Eigen::Matrix<double, 6, 1> goalVec = Eigen::Map<Eigen::MatrixXd>(goalState.data(), 6, 1);
+
     Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> controlVec = Eigen::Map<Eigen::MatrixXd>(controlArray.data(), CONTROL_SPACE_DIM, 1);
     Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> desControl;
     desControl << LO, 0, 0;
-    double temp = (VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0)) + \
-	 ((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0)) * \
-	INT_TIME_STEP;
-    if(temp < 0.0) {
-	std::cout<<"State"<<std::endl;
-	std::cout<<state[0]<<","<<state[1]<<","<<state[2]<<","<<state[3]<<","<<state[4]<<","<<state[5]<<std::endl;
-	std::cout<<"Prev state"<<std::endl;
-	std::cout<<prevState[0]<<","<<prevState[1]<<","<<prevState[2]<<","<<prevState[3]<<","<<prevState[4]<<","<<prevState[5]<<std::endl;
-	std::cout<<"Control"<<std::endl;
-	std::cout<<controlVec<<std::endl;
-	std::cout<<temp<<std::endl;
-    }
-    return temp;
+    double velCost = \
+	VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0));
+    double controlCost = \
+	((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0);
+    double stateCost = \
+	((stateVec - goalVec).transpose()*Qf*(stateVec-goalVec))(0,0);
+    return (velCost+controlCost+stateCost)*INT_TIME_STEP;
     // return \
     // 	(VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0)) + \
     // 	 ((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0)) * \
