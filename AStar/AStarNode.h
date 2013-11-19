@@ -67,4 +67,6 @@ std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> 
 /* double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> goalState); */
 
 double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> prevState, std::array<double, STATE_SPACE_DIM> goalState);
+
+
 #endif

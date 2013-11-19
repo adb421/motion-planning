@@ -7,16 +7,19 @@
 // 		      0,       0,   0,      0,   1000.0, 0, \
 // 		      0,       0,   0,      0,   0,      4.0};
 double Qf_array[STATE_SPACE_DIM*STATE_SPACE_DIM] =			\
-{QC/pow((MAX_X - MIN_X),2), 0,   0, 0, 0, 0,				\
- 0,      QC/pow((MAXVEL_XY*2),2), 0, 0, 0, 0,				\
- 0,       0,   QC/pow((MAX_Y - MIN_Y),2), 0, 0, 0,			\
- 0,       0,   0,      QC/pow((MAXVEL_XY*2),2), 0, 0,			\
- 0,       0,   0,      0,   QC/pow((MAX_TH - MIN_TH),2), 0,		\
- 0,       0,   0,      0,   0,      QC/pow((MAXVEL_TH),2)};
+{10*QC/pow((MAX_X - MIN_X),2), 0,   0, 0, 0, 0,				\
+ 0,      0.01*QC/pow((MAXVEL_XY*2),2), 0, 0, 0, 0,				\
+ 0,       0,   10*QC/pow((MAX_Y - MIN_Y),2), 0, 0, 0,			\
+ 0,       0,   0,      0.01*QC/pow((MAXVEL_XY*2),2), 0, 0,			\
+ 0,       0,   0,      0,   10*QC/pow((MAX_TH - MIN_TH),2), 0,		\
+ 0,       0,   0,      0,   0,      0.01*QC/pow((MAXVEL_TH*2),2)};
 
-double R_array[9] = {1.0, 0,   0, \
-		     0,   0.001, 0, \
-		     0,   0,   10.0};
+// double R_array[9] = {1.0, 0,   0, \
+// 		     0,   0.001, 0, \
+// 		     0,   0,   10.0};
+double R_array[9] = {0.0, 0,   0, \
+		     0,   0.0, 0, \
+		     0,   0,   0.0};
 Eigen::Matrix<double, 6, 6> Qf = Eigen::Map<Eigen::MatrixXd>(Qf_array, 6, 6);
 Eigen::Matrix<double, 3, 3> Rf = Eigen::Map<Eigen::MatrixXd>(R_array, 3, 3);
 
@@ -106,10 +109,10 @@ double AStarNode::getNodeCostToGo()
 std::vector<AStarNode*> AStarNode::expand()
 {
     double FnMin;
-    //TODO: Incorporate length of the side
+    //TODO: Incorporate length of the side???
     Eigen::ArrayXd contactPointLocations = Eigen::ArrayXd::LinSpaced(DISC_S,0,2*LO);
     Eigen::ArrayXd normalForceMagnitude = Eigen::ArrayXd::LinSpaced(DISC_FN,MIN_FN,MAX_FN);
-    Eigen::ArrayXd tangentForceMagnitude;
+    Eigen::ArrayXd tangentForceMagnitude = Eigen::ArrayXd::LinSpaced(DISC_FT,-MU,MU);
     std::array<double, CONTROL_SPACE_DIM> controlArray;
     std::vector<AStarNode*> childNodes;//(DISC_S*DISC_FN*DISC_FT);
     std::vector<AStarNode*> tempChildren;
@@ -126,12 +129,12 @@ std::vector<AStarNode*> AStarNode::expand()
 	for(j = 0; j < normalForceMagnitude.size(); j++)
 	{
 	    //Initialize friction force array
-	    tangentForceMagnitude = Eigen::ArrayXd::LinSpaced(DISC_FT,-MU*normalForceMagnitude[j],MU*normalForceMagnitude[j]);
+	    // tangentForceMagnitude = Eigen::ArrayXd::LinSpaced(DISC_FT,-MU*normalForceMagnitude[j],MU*normalForceMagnitude[j]);
 	    for(k = 0; k < tangentForceMagnitude.size(); k++)
 	    {
 		controlArray[0] = contactPointLocations[i];
 		controlArray[1] = normalForceMagnitude[j];
-		controlArray[2] = tangentForceMagnitude[k];
+		controlArray[2] = tangentForceMagnitude[k]*normalForceMagnitude[j];
 		tempNode = this->spawn(controlArray);
 		tempChildren.push_back(tempNode);
 	    }
@@ -151,15 +154,13 @@ std::vector<AStarNode*> AStarNode::expand()
 AStarNode* AStarNode::spawn(std::array<double, CONTROL_SPACE_DIM> controlArray) {
     std::array<double, STATE_SPACE_DIM> state = nodeState;
     std::array<double, STATE_SPACE_DIM> prevState;
-    std::array<double, CONTROL_SPACE_DIM> worldControl;
     double time = nodeTime;
     double newCost = cost;
     while(time <= TIME_STEP + nodeTime) {
 	prevState = state;
 	//Map controls from normal/tangent/contact point to world x/y/theta
-	worldControl = MapControlToWorld(state, controlArray);
 	//Euler integrate
-	state = OneStep(state, worldControl);
+	state = OneStep(state, MapControlToWorld(state, controlArray));
 	//Increment cost
 	newCost += realCost(state, controlArray, prevState, goalState);
 //	newCost += realCost(state, controlArray, goalState);
@@ -204,8 +205,13 @@ double costToGo(std::array<double, STATE_SPACE_DIM> state, std::array<double, ST
     Eigen::Vector3d bodyVel(XVel*cos(Th) + YVel*sin(Th), \
 			    YVel*cos(Th) - XVel*sin(Th), \
 			    ThVel);
-    double velCost =							\
-	VELSCALE*abs((goalBodyVel.cross(bodyVel)/(goalBodyVel.norm()*bodyVel.norm()))(0,0));    
+    if(bodyVel.isZero())
+	bodyVel << 0.0, 1.0, 0.0;
+
+    Eigen::Vector3d crossVel = goalBodyVel.cross(bodyVel);
+    
+    double angle = atan2(crossVel.norm(),goalBodyVel.dot(bodyVel));
+    double velCost = VELSCALE*fabs(angle);
     // //Quadruple cost if y is below when y velocity is the same
     // if(goalVec(1,0) != 0 && std::signbit(errorVec(0,0)) == std::signbit(goalVec(1,0)))
     //    errorVec(0,0) *= 2;
@@ -213,7 +219,15 @@ double costToGo(std::array<double, STATE_SPACE_DIM> state, std::array<double, ST
     // 	errorVec(2,0) *= 2;
     // if(goalVec(5,0) != 0 && std::signbit(errorVec(3,0)) == std::signbit(goalVec(5,0)))
     // 	errorVec(3,0) *= 2;
-    return ((errorVec.transpose())*Qf*errorVec)(0,0) + velCost;
+    double stateCost = (errorVec.transpose()*Qf*errorVec)(0,0);
+    // std::cout<<"Velocity cost: " << velCost<<std::endl;
+    // std::cout<<"State cost: " << stateCost<<std::endl;
+    // std::cout<<"Error vector: " << errorVec<<std::endl;
+    double costEst = (velCost + stateCost)*TIME_STEP*10;
+    // std::cout<<"Total Cost: "<<costEst<<std::endl;
+    // int tmp;
+    // std::cin>>tmp;
+    return costEst;
 }
 
 std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> worldControl) {
@@ -222,10 +236,12 @@ std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> 
 						      state[3], worldControl[1]/MO - GRAV, \
 						      state[5], worldControl[2]/JO};
     for(int i = 0; i < STATE_SPACE_DIM; i++) {
-	if(!BACKWARDS_INT)
+	if(!BACKWARDS_INT){
 	    state[i] += derivState[i]*INT_TIME_STEP;
-	else
+	} else {
+	    std::cout<<"Integrating backwards"<<std::endl;
 	    state[i] -= derivState[i]*INT_TIME_STEP;
+	}
     }
     return state;
 }
@@ -264,15 +280,19 @@ double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CO
     Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> controlVec = Eigen::Map<Eigen::MatrixXd>(controlArray.data(), CONTROL_SPACE_DIM, 1);
     Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> desControl;
     desControl << LO, 0, 0;
-    double velCost = \
-	VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0));
+    Eigen::Vector3d crossVel = prevBodyVel.cross(bodyVel);
+    
+    double angle = atan2(crossVel.norm(),prevBodyVel.dot(bodyVel));
+    double velCost = VELSCALE*fabs(angle);
+    
     double controlCost = \
 	((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0);
-    double stateCost = \
-	((stateVec - goalVec).transpose()*Qf*(stateVec-goalVec))(0,0);
-    return (velCost+controlCost+stateCost)*INT_TIME_STEP;
+//    double stateCost = 0.0;
+    double stateCost =						\
+	((stateVec - goalVec).transpose()*Qf*(stateVec - goalVec))(0,0);
+    return ((velCost+controlCost+stateCost)*INT_TIME_STEP);
     // return \
-    // 	(VELSCALE*abs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0)) + \
+    // 	(VELSCALE*fabs((prevBodyVel.cross(bodyVel)/(prevBodyVel.norm()*bodyVel.norm()))(0,0)) + \
     // 	 ((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0)) * \
     // 	INT_TIME_STEP;
     
