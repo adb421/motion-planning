@@ -91,17 +91,18 @@ int main(int argc, char** argv)
 		 << tempState[3] << " " << tempState[4] << " " << tempState[5] << " " \
 	         << tempControl[0] << " " << tempControl[1] << " " << tempControl[2] << std::endl;
     }
-    std::cout << "Deleting open nodes" << std::endl;
-    //Delete!!!! openQueue and closedNodes
-    while(!openQueue.empty()) {
-	delete openQueue.top();
-	openQueue.pop();
-    }
-    std::cout << "Deleting closed nodes" << std::endl;
-    while(!closedNodes.empty()) {
-	delete closedNodes.back();
-	closedNodes.pop_back();
-    }
+    std::cout<<"Not deleting?"<<std::endl;
+    // std::cout << "Deleting open nodes" << std::endl;
+    // //Delete!!!! openQueue and closedNodes
+    // while(!openQueue.empty()) {
+    // 	delete openQueue.top();
+    // 	openQueue.pop();
+    // }
+    // std::cout << "Deleting closed nodes" << std::endl;
+    // while(!closedNodes.empty()) {
+    // 	delete closedNodes.back();
+    // 	closedNodes.pop_back();
+    // }
     std::cout<<"Time: " << (std::clock() - start)/(double)CLOCKS_PER_SEC<<std::endl;
     return 0;
 }
