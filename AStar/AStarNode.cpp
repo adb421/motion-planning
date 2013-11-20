@@ -223,7 +223,7 @@ double costToGo(std::array<double, STATE_SPACE_DIM> state, std::array<double, ST
     // std::cout<<"Velocity cost: " << velCost<<std::endl;
     // std::cout<<"State cost: " << stateCost<<std::endl;
     // std::cout<<"Error vector: " << errorVec<<std::endl;
-    double costEst = (velCost + stateCost)*TIME_STEP*10;
+    double costEst = (velCost + stateCost)*INT_TIME_STEP;
     // std::cout<<"Total Cost: "<<costEst<<std::endl;
     // int tmp;
     // std::cin>>tmp;
