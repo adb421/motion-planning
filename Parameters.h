@@ -26,5 +26,5 @@
 #define MAXVEL_XY (6)
 #define MAXVEL_TH (4.0*M_PI)
 #define GOAL_EPSILON (0.000001)
-#define VELSCALE (30.0)
-#define QC (1000.0)//(1000.0)
+#define VELSCALE (0.0)
+#define QC (100.0)//(1000.0)

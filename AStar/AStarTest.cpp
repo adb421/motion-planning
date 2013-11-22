@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     double distToGoal;
     //Set up the priority quee
     std::priority_queue<AStarNode*, std::vector<AStarNode*>, AStarNodePtrCompare> openQueue;
-    std::vector<AStarNode*> closedNodes;
+//    std::vector<AStarNode*> closedNodes;
     std::vector<AStarNode*> expandedNodes;
     std::array<double, STATE_SPACE_DIM> initState = {0,0,0,0,0,0};
 //    std::array<double, STATE_SPACE_DIM> goalState = {-0.2, 0.0, -0.1, 0.0, 0.0, 0.0};
@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 	//Pop the highest priority node (lowest cost)
 	currentNode = openQueue.top();
 	openQueue.pop();
-	closedNodes.push_back(currentNode);
+//	closedNodes.push_back(currentNode);
 
 	//Check if the node is close enough
 	if(currentNode->getNodeCostToGo() <= GOAL_EPSILON) {
@@ -91,18 +91,6 @@ int main(int argc, char** argv)
 		 << tempState[3] << " " << tempState[4] << " " << tempState[5] << " " \
 	         << tempControl[0] << " " << tempControl[1] << " " << tempControl[2] << std::endl;
     }
-    std::cout<<"Not deleting?"<<std::endl;
-    // std::cout << "Deleting open nodes" << std::endl;
-    // //Delete!!!! openQueue and closedNodes
-    // while(!openQueue.empty()) {
-    // 	delete openQueue.top();
-    // 	openQueue.pop();
-    // }
-    // std::cout << "Deleting closed nodes" << std::endl;
-    // while(!closedNodes.empty()) {
-    // 	delete closedNodes.back();
-    // 	closedNodes.pop_back();
-    // }
     std::cout<<"Time: " << (std::clock() - start)/(double)CLOCKS_PER_SEC<<std::endl;
     return 0;
 }

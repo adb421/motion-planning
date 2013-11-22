@@ -17,9 +17,9 @@ double Qf_array[STATE_SPACE_DIM*STATE_SPACE_DIM] =			\
 // double R_array[9] = {1.0, 0,   0, \
 // 		     0,   0.001, 0, \
 // 		     0,   0,   10.0};
-double R_array[9] = {0.0, 0,   0, \
+double R_array[9] = {10.0, 0,   0, \
 		     0,   0.0, 0, \
-		     0,   0,   0.0};
+		     0,   0,   10.0};
 Eigen::Matrix<double, 6, 6> Qf = Eigen::Map<Eigen::MatrixXd>(Qf_array, 6, 6);
 Eigen::Matrix<double, 3, 3> Rf = Eigen::Map<Eigen::MatrixXd>(R_array, 3, 3);
 
@@ -211,7 +211,7 @@ double costToGo(std::array<double, STATE_SPACE_DIM> state, std::array<double, ST
     Eigen::Vector3d crossVel = goalBodyVel.cross(bodyVel);
     
     double angle = atan2(crossVel.norm(),goalBodyVel.dot(bodyVel));
-    double velCost = VELSCALE*fabs(angle);
+    double velCost = VELSCALE*pow(angle,2);
     // //Quadruple cost if y is below when y velocity is the same
     // if(goalVec(1,0) != 0 && std::signbit(errorVec(0,0)) == std::signbit(goalVec(1,0)))
     //    errorVec(0,0) *= 2;
@@ -283,7 +283,7 @@ double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CO
     Eigen::Vector3d crossVel = prevBodyVel.cross(bodyVel);
     
     double angle = atan2(crossVel.norm(),prevBodyVel.dot(bodyVel));
-    double velCost = VELSCALE*fabs(angle);
+    double velCost = VELSCALE*pow(angle,2);
     
     double controlCost = \
 	((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0);
