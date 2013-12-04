@@ -29,8 +29,10 @@ int main(int argc, char** argv)
     Eigen::Matrix<double, STATE_SPACE_DIM,1> sampleState;
     RGRRTNode* nearest;
     double minDist;
+    double secondMinDist = -1;
     std::array<Eigen::Matrix<double, STATE_SPACE_DIM,1>, NUM_DISC> nearestReach;
     int nearestReachIndex;
+    int secondNearestReachIndex;
     
     while(!solFound && count < MAX_SAMPLES)
     {
@@ -41,22 +43,41 @@ int main(int argc, char** argv)
 	    //Find its nearest neighbor in the tree
 	    nearest = tree[0];
 	    minDist = dist(sampleState,nearest->getNodeState());
+	    secondMinDist = -1; //Reset
 	    for(int i = 1; i < tree.size(); i++) {
 		if((dist(sampleState,tree[i]->getNodeState())) < minDist) {
 		    minDist = dist(sampleState,tree[i]->getNodeState());
 		    nearest = tree[i];
 		}
 	    }
+	    //This will only work for points outside the hull
+	    //We should check if the sample is INSIDE the convex hull first
 	    nearestReach = nearest->getReachableStates();
+//	    minDist = dist(sampleState,nearestReach[0]);
+	    secondNearestReachIndex = -1;
 	    for(int i = 0; i < nearestReach.size(); i++) {
 		if((dist(sampleState,nearestReach[i])) < minDist) {
+		    secondMinDist = minDist;
+		    if(!good_sample) { //Only update "second min distance" if we've already updated minDist
+			secondNearestReachIndex = nearestReachIndex;
+		    }
 		    good_sample = 1;
 		    nearestReachIndex = i;
 		    minDist = dist(sampleState,nearestReach[i]);
+		} else {
+		    if(dist(sampleState,nearestReach[i]) < secondMinDist) { //Impossible if 2ndmindist = -1
+			secondNearestReachIndex = i;
+			secondMinDist = dist(sampleState,nearestReach[i]);
+		    }
 		}
 	    }
+	    //Check good sample
 	    if(!good_sample)
 		discardedSamples++;
+	}
+
+	if(secondNearestReachindex == -1) { //The second closest point is the nearest neighbor. Just use the nearest
+	    
 	}
 	tree.push_back(new RGRRTNode(nearestReach[nearestReachIndex],	\
 				     (nearest->getReachableControls())[nearestReachIndex], \

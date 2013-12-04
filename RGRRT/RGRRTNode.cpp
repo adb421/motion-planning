@@ -145,6 +145,8 @@ double dist(Eigen::Matrix<double,STATE_SPACE_DIM,1> state1, Eigen::Matrix<double
     return (((state1 - state2).transpose())*QDist*(state1-state2))(0,0);
 }
 
+
+//Might be TOTALLY UNNECESSSARY!
 //Create the convex hull of the reachable points
 Convex_hull_d* createConvexHullReachable(std::array<std::array<double,STATE_SPACE_DIM>,NUM_DISC> reachable_states) {
     //Create an array of Point_d's, use that to make the convex hull?
