@@ -142,7 +142,8 @@ Eigen::Matrix<double, STATE_SPACE_DIM,1> RandomSample(Eigen::Matrix<double,STATE
 }
 
 double dist(Eigen::Matrix<double,STATE_SPACE_DIM,1> state1, Eigen::Matrix<double,STATE_SPACE_DIM,1> state2) {
-    return (((state1 - state2).transpose())*QDist*(state1-state2))(0,0);
+//    return (((state1 - state2).transpose())*QDist*(state1-state2))(0,0);
+    return (((state1 - state2).transpose())*(state1-state2))(0,0);
 }
 
 

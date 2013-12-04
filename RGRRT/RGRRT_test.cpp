@@ -52,13 +52,14 @@ int main(int argc, char** argv)
 	    }
 	    //This will only work for points outside the hull
 	    //We should check if the sample is INSIDE the convex hull first
+	    //For now, I'm going to assume its not.... and if it is, thats ok. I think.
 	    nearestReach = nearest->getReachableStates();
 //	    minDist = dist(sampleState,nearestReach[0]);
 	    secondNearestReachIndex = -1;
 	    for(int i = 0; i < nearestReach.size(); i++) {
 		if((dist(sampleState,nearestReach[i])) < minDist) {
-		    secondMinDist = minDist;
-		    if(!good_sample) { //Only update "second min distance" if we've already updated minDist
+		    secondMinDist = minDist; //If we haven't updated yet, this is dist to neighbor
+		    if(good_sample) { //Only update "second min distance" if we've already updated minDist
 			secondNearestReachIndex = nearestReachIndex;
 		    }
 		    good_sample = 1;
@@ -77,11 +78,26 @@ int main(int argc, char** argv)
 	}
 
 	if(secondNearestReachindex == -1) { //The second closest point is the nearest neighbor. Just use the nearest
-	    
+	    tree.push_back(new RGRRTNode(nearestReach[nearestReachindex], \
+					 (nearest->getReachableControls())[nearestReachindex], \
+					 nearest, nearest->getNodeTime() + TIME_STEP));
+	} else { 
+	    //Get the controls
+	    //First find distance to closest point on the line
+	    Eigen::Matrix<double,STATE_SPACE_DIM,1> P1 = nearestReach[nearestReachIndex];
+	    Eigen::Matrix<double,STATE_SPACE_DIM,1> P2 = nearestReach[secondNearestReachIndex];
+	    double lineLength = sqrt(((P2 - P1).transpose()*(P2-P1))(0,0));
+	    //P is sampleState
+	    //Unit length along line.
+	    double distAlongLine = (((sampleState - P1).transpose())*(P2-P1)/lineLength/lineLength)(0,0);
+	    //Now figure out how far along the control you go.
+	    Eigen::Matrix<double,CONTROL_SPACE_DIM,1> C1 = (nearest->getReachableControls())[nearestReachIndex];
+	    Eigen::Matrix<double,CONTROL_SPACE_DIM,1> C2 = \
+		(nearest->getReachableControls())[secondNearestReachIndex];
+	    Eigen::Matrix<double,CONTROL_SPACE_DIM,1> CUse = C1 + distAlongLine*(C2-C1);
+	    tree.push_back(new RGRRTNode(spawn(nearest.getNodeState(),CUse), \
+					 CUse, nearest, nearest->getNodeTime() + TIME_STEP));
 	}
-	tree.push_back(new RGRRTNode(nearestReach[nearestReachIndex],	\
-				     (nearest->getReachableControls())[nearestReachIndex], \
-				     nearest, nearest->getNodeTime() + TIME_STEP));
 	    //check if its a solution
 	    //If not, new sample
 	count++;
