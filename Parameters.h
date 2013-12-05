@@ -1,18 +1,18 @@
 #define STATE_SPACE_DIM 6
 #define CONTROL_SPACE_DIM 3
-#define DISC_S 5
-#define DISC_FN 5
-#define DISC_FT 5
+#define DISC_S 2
+#define DISC_FN 2
+#define DISC_FT 2
 #define NUM_DISC (DISC_S*DISC_FN*DISC_FT)
 #define MU (1.0)
-#define TIME_STEP (0.01)
+#define TIME_STEP (0.0075)
 #define INT_TIME_STEP (0.0001)
 #define LO (0.051)
 #define WO (0.045)
 #define MO (0.07545)
 #define JO (1.0/3.0*MO*(LO*LO + WO*WO))
-#define GRAV (9.81*sin(0.4))
-#define MAX_FN (5.0*GRAV*MO)
+#define GRAV (9.81*sin(0.405))
+#define MAX_FN (4.0*GRAV*MO)
 #define MIN_FN (0.01)
 #define BACKWARDS_INT (0)
 #define BIAS 0.075 //prob of sampling goal state exactly

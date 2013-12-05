@@ -5,7 +5,7 @@
 #include "RGRRTNode.h"
 #include <ctime>
 
-#define MAX_SAMPLES 20000
+#define MAX_SAMPLES 5000
 
 int main(int argc, char** argv)
 {
@@ -19,12 +19,14 @@ int main(int argc, char** argv)
     Eigen::Matrix<double, STATE_SPACE_DIM,1> initState;
     Eigen::Matrix<double, STATE_SPACE_DIM,1> goalState;
     initState << 0, 0, 0, 0, 0, 0;
-//    goalState << -0.3, 0.0, 0.0, -1.75, M_PI, 0.0;
-    goalState << -0.2, 0.0, 0.1, 0.0, 0.0, 0.0;
+    goalState << -0.3, 0.0, 0.0, -2.0, M_PI, 0.0;
+//    goalState << -0.2, 0.0, 0.1, 0.0, 0.0, 0.0;
     tree.push_back(new RGRRTNode(initState));
     bool solFound = 0;
     int count = 0;
     int good_sample;
+    int onePointCount = 0;
+    int twoPointCount = 0;
 
     Eigen::Matrix<double, STATE_SPACE_DIM,1> sampleState;
     RGRRTNode* nearest;
@@ -76,11 +78,14 @@ int main(int argc, char** argv)
 	    if(!good_sample)
 		discardedSamples++;
 	}
+	if(nearest->getNodeParent() == NULL)
+	    std::cout<<count<<" Root"<<std::endl;
 
-	if(secondNearestReachindex == -1) { //The second closest point is the nearest neighbor. Just use the nearest
-	    tree.push_back(new RGRRTNode(nearestReach[nearestReachindex], \
-					 (nearest->getReachableControls())[nearestReachindex], \
+	if(secondNearestReachIndex == -1) { //The second closest point is the nearest neighbor. Just use the nearest
+	    tree.push_back(new RGRRTNode(nearestReach[nearestReachIndex], \
+					 (nearest->getReachableControls())[nearestReachIndex], \
 					 nearest, nearest->getNodeTime() + TIME_STEP));
+	    onePointCount++;
 	} else { 
 	    //Get the controls
 	    //First find distance to closest point on the line
@@ -90,13 +95,32 @@ int main(int argc, char** argv)
 	    //P is sampleState
 	    //Unit length along line.
 	    double distAlongLine = (((sampleState - P1).transpose())*(P2-P1)/lineLength/lineLength)(0,0);
+	    //If its outside the line, we can't use it.
+	    // if(distAlongLine > 1.0)
+	    // 	distAlongLine = 1.0;
+	    // else if(distAlongLine < 0.0)
+	    // 	distAlongLine = 0.0;
+
 	    //Now figure out how far along the control you go.
 	    Eigen::Matrix<double,CONTROL_SPACE_DIM,1> C1 = (nearest->getReachableControls())[nearestReachIndex];
 	    Eigen::Matrix<double,CONTROL_SPACE_DIM,1> C2 = \
 		(nearest->getReachableControls())[secondNearestReachIndex];
 	    Eigen::Matrix<double,CONTROL_SPACE_DIM,1> CUse = C1 + distAlongLine*(C2-C1);
-	    tree.push_back(new RGRRTNode(spawn(nearest.getNodeState(),CUse), \
+	    if(CUse(0,0) < 0.0)
+		CUse(0,0) = 0.0;
+	    else if(CUse(0,0) > 2.0*LO)
+		CUse(0,0) = 2.0*LO;
+	    if(CUse(1,0) < 0.0)
+		CUse(1,0) = 0.0;
+	    else if(CUse(1,0) > MAX_FN)
+		CUse(1,0) = MAX_FN;
+	    if(CUse(2,0) < -MU*CUse(1,0))
+		CUse(2,0) = -MU*CUse(1,0);
+	    else if(CUse(2,0) > MU*CUse(1,0))
+		CUse(2,0) = MU*CUse(1,0);
+	    tree.push_back(new RGRRTNode(spawn(nearest->getNodeState(),CUse), \
 					 CUse, nearest, nearest->getNodeTime() + TIME_STEP));
+	    twoPointCount++;
 	}
 	    //check if its a solution
 	    //If not, new sample
@@ -122,6 +146,8 @@ int main(int argc, char** argv)
 		solNode = tree[i];
 	    }
 	}
+//	if(solNode == tree[0])
+//	    solNode = tree.back();
     } else {
 	solNode = tree.back();
     }
@@ -135,13 +161,11 @@ int main(int argc, char** argv)
 	solution.push_back(solNode);
 	prevNode = solNode;
 	solNode = solNode->getNodeParent();
-	if(solNode == prevNode) {
-	    std::cout << "weird pointer behavior" << std::endl;
-	    break;
-	}
     }
     solution.push_back(solNode);
     std::cout << "Discarded " << discardedSamples << " samples." <<std::endl;
+    std::cout << "One Point Samples: " << onePointCount << std::endl;
+    std::cout << "Two Point Samples: " << twoPointCount << std::endl;
     std::cout << "Solution has " << solution.size() << " nodes" << std::endl;
     std::cout << "Outputting files" << std::endl;
     std::ofstream out_file("Solution.txt", std::ios::trunc);
@@ -158,12 +182,12 @@ int main(int argc, char** argv)
 		 << tempState(3,0) << " " << tempState(4,0) << " " << tempState(5,0) << " " \
 	         << tempControl(0,0) << " " << tempControl(1,0) << " " << tempControl(2,0) << std::endl;
     }
-    std::cout << "Deleting nodes" << std::endl;
-    //Delete!!!! openQueue and closedNodes
-    while(!tree.empty()) {
-	delete tree.back();
-	tree.pop_back();
-    }
+    // std::cout << "Deleting nodes" << std::endl;
+    // //Delete!!!! openQueue and closedNodes
+    // while(!tree.empty()) {
+    // 	delete tree.back();
+    // 	tree.pop_back();
+    // }
 
     std::cout<<"Time: " << (std::clock() - start)/(double)CLOCKS_PER_SEC<<std::endl;
     return 0;
