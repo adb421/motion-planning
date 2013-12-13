@@ -1,4 +1,4 @@
-project( RGRRT )
+project( SPARSE-RRT )
 
 cmake_minimum_required(VERSION 2.6.2)
 if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
@@ -18,6 +18,8 @@ if ( COMMAND cmake_policy )
 endif()
 
 #add definition for c++11
+#and definition for optimization
 add_definitions(-std=c++0x)
+add_definitions(-O2)
 
-add_executable(RGRRT_test RGRRT_test.cpp RGRRTNode.cpp)
+add_executable(SPARSE-RRT_test SPARSE-RRT_test.cpp SPARSE-RRTNode.cpp)

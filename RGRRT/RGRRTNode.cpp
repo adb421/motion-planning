@@ -43,7 +43,7 @@ RGRRTNode::RGRRTNode(Eigen::Matrix<double, STATE_SPACE_DIM,1> setState,	\
 
 void RGRRTNode::FindReachableSet(){
     //Need to discretize control space, and fill in reachableStates and reachableControls arrays
-    Eigen::ArrayXd contactPointLocations = Eigen::ArrayXd::LinSpaced(DISC_S,0,2*LO);
+    Eigen::ArrayXd contactPointLocations = Eigen::ArrayXd::LinSpaced(DISC_S,-LO,LO);
     Eigen::ArrayXd normalForceMagnitude = Eigen::ArrayXd::LinSpaced(DISC_FN,MIN_FN,MAX_FN);
     Eigen::ArrayXd tangentForceMagnitude = Eigen::ArrayXd::LinSpaced(DISC_FT,-1.0*MU,MU);
     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray;
@@ -96,7 +96,7 @@ MapControlToWorld(Eigen::Matrix<double, STATE_SPACE_DIM,1> state,	\
     double theta = state(4,0);
     worldControl(0,0) = Ft*cos(theta) - Fn*sin(theta);
     worldControl(1,0) = Fn*cos(theta) + Ft*sin(theta);
-    worldControl(2,0) = WO*Ft + (conPoint - LO)*Fn;
+    worldControl(2,0) = WO*Ft + conPoint*Fn;
     return worldControl;
 }
 
@@ -109,7 +109,7 @@ Eigen::Matrix<double, STATE_SPACE_DIM,1> OneStep(Eigen::Matrix<double, STATE_SPA
 	worldControl(1,0)/MO - GRAV,
 	state(5,0),
 	worldControl(2,0)/JO;
-    state = state + derivState*INT_TIME_STEP;
+    state = state + derivState*INT_TIME_STEP;nnn
     return state;
 }
 
