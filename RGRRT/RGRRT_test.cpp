@@ -4,6 +4,7 @@
 #include <queue>
 #include "RGRRTNode.h"
 #include <ctime>
+#include <string>
 
 #define MAX_SAMPLES 5000
 
@@ -11,6 +12,12 @@ int main(int argc, char** argv)
 {
     clock_t start;
     start = std::clock();
+    std::string filename;
+    if(argc > 1) {
+	filename = argv[1];
+    } else {
+	filename = "Solution.txt";
+    }
 //    omp_set_num_threads(4);
     double distToGoal;
     //Set up the priority quee
@@ -78,8 +85,8 @@ int main(int argc, char** argv)
 	    if(!good_sample)
 		discardedSamples++;
 	}
-	if(nearest->getNodeParent() == NULL)
-	    std::cout<<count<<" Root"<<std::endl;
+	// if(nearest->getNodeParent() == NULL)
+	//     std::cout<<count<<" Root"<<std::endl;
 
 	if(secondNearestReachIndex == -1) { //The second closest point is the nearest neighbor. Just use the nearest
 	    tree.push_back(new RGRRTNode(nearestReach[nearestReachIndex], \
@@ -125,15 +132,15 @@ int main(int argc, char** argv)
 	    //check if its a solution
 	    //If not, new sample
 	count++;
-	if(count % 100 == 0)
-	    std::cout << "Step: " << count << std::endl;
+	// if(count % 100 == 0)
+	//     std::cout << "Step: " << count << std::endl;
 	//Check if the node is close enough
 	if(dist(goalState,tree.back()->getNodeState()) <= GOAL_EPSILON) {
-	    std::cout << "Done!" << std::endl;
+//	    std::cout << "Done!" << std::endl;
 	    solFound = 1;
 	}
     }
-    std::cout << "Tree has " << tree.size() << " nodes." << std::endl;
+//    std::cout << "Tree has " << tree.size() << " nodes." << std::endl;
     RGRRTNode* solNode;
     if(!solFound) {
 	solNode = tree[0];
@@ -151,9 +158,11 @@ int main(int argc, char** argv)
     } else {
 	solNode = tree.back();
     }
-    std::cout<<"Solution is at a distance of " << minDist << " from the goal." << std::endl;
-    std::cout<<"Final State:" << std::endl << solNode->getNodeState() << std::endl;
-    std::cout<<"Goal State:" << std::endl << goalState << std::endl;
+    // std::cout<<"Solution is at a distance of " << minDist << " from the goal." << std::endl;
+    // std::cout<<"Final State:" << std::endl << solNode->getNodeState() << std::endl;
+    // std::cout<<"Goal State:" << std::endl << goalState << std::endl;
+    // Output solution distance for batch
+    std::cout<<minDist<<std::endl;
     //Save the solution
     std::vector<RGRRTNode*> solution;
     RGRRTNode* prevNode;
@@ -163,12 +172,12 @@ int main(int argc, char** argv)
 	solNode = solNode->getNodeParent();
     }
     solution.push_back(solNode);
-    std::cout << "Discarded " << discardedSamples << " samples." <<std::endl;
-    std::cout << "One Point Samples: " << onePointCount << std::endl;
-    std::cout << "Two Point Samples: " << twoPointCount << std::endl;
-    std::cout << "Solution has " << solution.size() << " nodes" << std::endl;
-    std::cout << "Outputting files" << std::endl;
-    std::ofstream out_file("Solution.txt", std::ios::trunc);
+    // std::cout << "Discarded " << discardedSamples << " samples." <<std::endl;
+    // std::cout << "One Point Samples: " << onePointCount << std::endl;
+    // std::cout << "Two Point Samples: " << twoPointCount << std::endl;
+    // std::cout << "Solution has " << solution.size() << " nodes" << std::endl;
+    // std::cout << "Outputting files" << std::endl;
+    std::ofstream out_file(filename, std::ios::trunc);
     out_file <<"X Xd Y Yd Th Thd s Fn Ft"<<std::endl;
     Eigen::Matrix<double, STATE_SPACE_DIM,1> tempState;
     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> tempControl;
@@ -189,6 +198,6 @@ int main(int argc, char** argv)
     // 	tree.pop_back();
     // }
 
-    std::cout<<"Time: " << (std::clock() - start)/(double)CLOCKS_PER_SEC<<std::endl;
+//    std::cout<<"Time: " << (std::clock() - start)/(double)CLOCKS_PER_SEC<<std::endl;
     return 0;
 }
