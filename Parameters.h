@@ -5,17 +5,17 @@
 #define DISC_FT 2
 #define NUM_DISC (DISC_S*DISC_FN*DISC_FT)
 #define MU (1.0)
-#define TIME_STEP (0.01)
+#define TIME_STEP (0.0025)
 #define INT_TIME_STEP (0.0001)
 #define LO (0.051)
 #define WO (0.045)
 #define MO (0.07545)
 #define JO (1.0/3.0*MO*(LO*LO + WO*WO))
 #define GRAV (9.81*sin(0.405))
-#define MAX_FN (3.0*GRAV*MO)
+#define MAX_FN (5.0*GRAV*MO)
 #define MIN_FN (0.0)
 #define BACKWARDS_INT (0)
-#define BIAS 0.03 //prob of sampling goal state exactly
+#define BIAS 0.025 //prob of sampling goal state exactly
 #define TO_METERS 0.0254
 #define MIN_X (-20*TO_METERS)
 #define MAX_X (4*TO_METERS)

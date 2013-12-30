@@ -14,13 +14,13 @@ function float_cond()
 }
 
 echo Running Iteration 0
-minVal="$(./SPARSE-RGRRT_test Solution0.txt)"
+minVal="$(./SPARSE-RRT_test Solution0.txt)"
 echo Iteration 0 starts with value $minVal
 for i in `seq 1 100`;
 do
     echo Running Iteration $i
     filename="Solution$i.txt"
-    val="$(./SPARSE-RGRRT_test $filename)"
+    val="$(./SPARSE-RRT_test $filename)"
     if float_cond "$val < $minVal"; then
 	cp $filename Solution.txt
 	echo Minimum is $i with value $val

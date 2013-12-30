@@ -109,7 +109,7 @@ Eigen::Matrix<double, STATE_SPACE_DIM,1> OneStep(Eigen::Matrix<double, STATE_SPA
 	worldControl(1,0)/MO - GRAV,
 	state(5,0),
 	worldControl(2,0)/JO;
-    state = state + derivState*INT_TIME_STEP;nnn
+    state = state + derivState*INT_TIME_STEP;
     return state;
 }
 

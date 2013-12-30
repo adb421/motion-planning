@@ -6,7 +6,7 @@
 #include <ctime>
 #include <string>
 
-#define MAX_SAMPLES 5000
+#define MAX_SAMPLES 7500
 
 int main(int argc, char** argv)
 {
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
     Eigen::Matrix<double, STATE_SPACE_DIM,1> initState;
     Eigen::Matrix<double, STATE_SPACE_DIM,1> goalState;
     initState << 0, 0, 0, 0, 0, 0;
-    goalState << -0.3, 0.0, 0.0, -2.0, M_PI, 0.0;
+    goalState << -0.3, 0.0, 0.0, -3.5, M_PI, 0.0;
 //    goalState << -0.2, 0.0, 0.1, 0.0, 0.0, 0.0;
     tree.push_back(new RGRRTNode(initState));
     bool solFound = 0;
@@ -87,11 +87,19 @@ int main(int argc, char** argv)
 	}
 	// if(nearest->getNodeParent() == NULL)
 	//     std::cout<<count<<" Root"<<std::endl;
-
+	//Get control scaling
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> dis(0,1);
+	double control_scale = dis(gen);
 	if(secondNearestReachIndex == -1) { //The second closest point is the nearest neighbor. Just use the nearest
-	    tree.push_back(new RGRRTNode(nearestReach[nearestReachIndex], \
-					 (nearest->getReachableControls())[nearestReachIndex], \
-					 nearest, nearest->getNodeTime() + TIME_STEP));
+	    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> CUse = nearest->getReachableControls()[nearestReachIndex];
+	    CUse *= control_scale;
+	    tree.push_back(new RGRRTNode(spawn(nearest->getNodeState(),CUse), \
+					 CUse, nearest, nearest->getNodeTime() + TIME_STEP));
+	    // tree.push_back(new RGRRTNode(nearestReach[nearestReachIndex], \
+	    // 				 ((nearest->getReachableControls())[nearestReachIndex]), \
+	    // 				 nearest, nearest->getNodeTime() + TIME_STEP));
 	    onePointCount++;
 	} else { 
 	    //Get the controls
@@ -113,6 +121,7 @@ int main(int argc, char** argv)
 	    Eigen::Matrix<double,CONTROL_SPACE_DIM,1> C2 = \
 		(nearest->getReachableControls())[secondNearestReachIndex];
 	    Eigen::Matrix<double,CONTROL_SPACE_DIM,1> CUse = C1 + distAlongLine*(C2-C1);
+	    CUse *= control_scale;
 	    if(CUse(0,0) < 0.0)
 		CUse(0,0) = 0.0;
 	    else if(CUse(0,0) > 2.0*LO)
