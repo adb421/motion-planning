@@ -113,10 +113,14 @@ double dist(Eigen::Matrix<double,STATE_SPACE_DIM,1> state1, Eigen::Matrix<double
 }
 
 
-Eigen::Matrix<double, CONTROL_SPACE_DIM,1> RandomControl(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlMean) {
+Eigen::Matrix<double, CONTROL_SPACE_DIM,1> RandomControl(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlMean, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlGoal, std::array<int,3> controlCare) {
+    // for(int i = 0; i < controlCare.size(); i++) {
+    // 	if(controlCare[i])
+    // 	    controlMean(i,0) = (controlMean(i,0) + controlGoal(i,0))*0.5;
+    // }
+
     std::random_device rd;
     std::mt19937 gen(rd());
-//    std::uniform_real_distribution<> dis(0,1);
     std::normal_distribution<> SDis(controlMean(0,0), S_STD_DEV);
     std::normal_distribution<> FnDis(controlMean(1,0), FN_STD_DEV);
     std::normal_distribution<> MuDis(controlMean(2,0), MU_STD_DEV);
@@ -139,5 +143,6 @@ Eigen::Matrix<double, CONTROL_SPACE_DIM,1> RandomControl(Eigen::Matrix<double, C
     else if(conPointSamp < -LO)
 	conPointSamp = -LO;
     samp << conPointSamp, FnSamp, muSamp*FnSamp;
+
     return samp;
 }

@@ -6,7 +6,7 @@
 #include <ctime>
 #include <string>
 
-#define MAX_SAMPLES 60000
+#define MAX_SAMPLES 20000
 
 int main(int argc, char** argv)
 {
@@ -25,8 +25,12 @@ int main(int argc, char** argv)
     Eigen::Matrix<double, STATE_SPACE_DIM,1> initState;
     Eigen::Matrix<double, STATE_SPACE_DIM,1> goalState;
     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> basicControlSample;
+
+    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalControl;
     initState << 0, 0, 0, 0, 0, 0;
-    goalState << -0.3, 0.0, 0.0, -0.95, M_PI, 0.0;
+    goalState << -0.2, -0.0525, 0.1, 0.0245, 0.4115, 0.8511; //Should get us from dyn grasp to roll
+    std::array<int,3> controlCare = {1,0,0};
+    goalControl << -LO, 0.0, 0.0; //Only care about control input 1 anyway
     basicControlSample << 0, GRAV*MO, 0;
     tree.push_back(new SPARSE_RRTNode(initState));
     bool solFound = 0;
@@ -37,73 +41,74 @@ int main(int argc, char** argv)
     SPARSE_RRTNode* nearest;
     std::vector<SPARSE_RRTNode*> nearestVector;
     double minDist;
-    
+    SPARSE_RRTNode* solNode;
+    double solDist;
+    solNode = tree.back();
+    solDist = dist(solNode->getNodeState(),goalState);
     while(!solFound && count < MAX_SAMPLES)
     {
-	//sample a random state
-	sampleState = RandomSample(goalState);
-	//Find its nearest neighbor in the tree
-	nearest = tree[0];
-	minDist = dist(sampleState,nearest->getNodeState());
-	for(int i = 1; i < tree.size(); i++) {
-	    if((dist(sampleState,tree[i]->getNodeState())) < minDist) {
-		minDist = dist(sampleState,tree[i]->getNodeState());
-		nearest = tree[i];
-	    }
-	    if((dist(sampleState,tree[i]->getNodeState)) < DELTA_NEAR) {
-		nearestVector.pushback(tree[i]);
-	    }
-	}
-	if(!nearestVector.empty()) {
-	    double minTime = nearestVector[0].getNodeTime();
-	    nearest = nearestVector[0];
-	    for(int i = 1; i < nearestVector.size(); i++) {
-		if(nearestVector[i].getNodeTime() < minTime) {
-		    minTime = nearestVector[i].getNodeTime();
-		    nearest = nearestVector[i];
-		}
-	    }
-	}
+	int goodSample = 0;
 	Eigen::Matrix<double,CONTROL_SPACE_DIM,1> bestControl;
 	Eigen::Matrix<double,STATE_SPACE_DIM,1> bestState;
-	Eigen::Matrix<double,STATE_SPACE_DIM,1> tempState;
-	sampleControl = RandomControl(nearest->getNodeControl());
-	double bestDist;
-	bestState = spawn(nearest->getNodeState(),sampleControl);
-	bestDist = dist(bestState, sampleState);
-	//Randomly sapmle control space and pick the "best"
-	for(int i = 0; i < 5; i++) {
-	    sampleControl = RandomControl(nearest->getNodeControl());
-	    tempState = spawn(nearest->getNodeState(),sampleControl);
-	    if(dist(tempState,sampleState) < bestDist) {
-		bestDist = dist(tempState,sampleState);
-		bestControl = sampleControl;
-		bestState = tempState;
+	while(!goodSample) {
+	    //sample a random state
+	    sampleState = RandomSample(goalState);
+	    //Find its nearest neighbor in the tree
+	    nearest = tree[0];
+	    minDist = dist(sampleState,nearest->getNodeState());
+	    for(int i = 1; i < tree.size(); i++) {
+		if((dist(sampleState,tree[i]->getNodeState())) < minDist) {
+		    minDist = dist(sampleState,tree[i]->getNodeState());
+		    nearest = tree[i];
+		}
+		// if((dist(sampleState,tree[i]->getNodeState())) < DELTA_NEAR) {
+		//     nearestVector.push_back(tree[i]);
+		// }
 	    }
+	    // if(!nearestVector.empty()) {
+	    // 	double minTime = nearestVector[0]->getNodeTime();
+	    // 	nearest = nearestVector[0];
+	    // 	for(int i = 1; i < nearestVector.size(); i++) {
+	    // 	    if(nearestVector[i]->getNodeTime() < minTime) {
+	    // 		minTime = nearestVector[i]->getNodeTime();
+	    // 		nearest = nearestVector[i];
+	    // 	    }
+	    // 	}
+	    // 	nearestVector.clear();
+	    // 	nearestVector.shrink_to_fit();
+	    // }
+	    //Eigen::Matrix<double,CONTROL_SPACE_DIM,1> bestControl;
+	    //Eigen::Matrix<double,STATE_SPACE_DIM,1> bestState;
+	    Eigen::Matrix<double,STATE_SPACE_DIM,1> tempState;
+	    sampleControl = RandomControl(nearest->getNodeControl(), goalControl, controlCare);
+	    double bestDist;
+	    bestState = spawn(nearest->getNodeState(),sampleControl);
+	    bestDist = dist(bestState, sampleState);
+	    //Randomly sapmle control space and pick the "best"
+	    for(int i = 0; i < 50; i++) {
+		sampleControl = RandomControl(nearest->getNodeControl(), goalControl, controlCare);
+		tempState = spawn(nearest->getNodeState(),sampleControl);
+		if(dist(tempState,sampleState) < bestDist) {
+		    bestDist = dist(tempState,sampleState);
+		    bestControl = sampleControl;
+		    bestState = tempState;
+		}
+	    }
+	    if(bestDist < dist(sampleState,nearest->getNodeState()))
+	       goodSample = 1;
 	}
+	goodSample = 0;
 	tree.push_back(new SPARSE_RRTNode(bestState, bestControl, nearest, nearest->getNodeTime() + TIME_STEP));
-
+	if(solDist > dist(tree.back()->getNodeState(),goalState)) {
+	    solDist = dist(tree.back()->getNodeState(),goalState);
+	    solNode = tree.back();
+	    if(solDist <= GOAL_EPSILON)
+		solFound = 1;
+	}
+	    
 	count++;
-
-	if(dist(goalState,tree.back()->getNodeState()) <= GOAL_EPSILON) {
-	    solFound = 1;
-	}
     }
-    SPARSE_RRTNode* solNode;
-    if(!solFound) {
-	solNode = tree[0];
-	minDist = dist(solNode->getNodeState(), goalState);
-	double tempDist;
-	for(int i = 1; i < tree.size(); i++) {
-	    tempDist = dist(tree[i]->getNodeState(), goalState);
-	    if(tempDist < minDist) {
-		minDist = tempDist;
-		solNode = tree[i];
-	    }
-	}
-    } else {
-	solNode = tree.back();
-    }
+    minDist = solDist;
     // Output solution distance for batch
     std::cout<<minDist<<std::endl;
     //Save the solution
@@ -129,6 +134,18 @@ int main(int argc, char** argv)
 	out_file << tempState(0,0) << " " << tempState(1,0) << " " << tempState(2,0) << " " \
 		 << tempState(3,0) << " " << tempState(4,0) << " " << tempState(5,0) << " " \
 	         << tempControl(0,0) << " " << tempControl(1,0) << " " << tempControl(2,0) << std::endl;
+    }
+
+    for(int ii = tree.length() - 1; ii >= 0; ii--} {
+	currentNode = tree[ii];
+	currentParent = currentNode->getNodeParent();
+	for(int j = 0; j < ii; j++) {
+	    if(tree[j] == currentParent)
+		break;
+	}
+	tempState = currentNode->getNodeState();
+	tempControl = currentNode->getNodeControl();
+	out_file << temp
     }
     return 0;
 }
