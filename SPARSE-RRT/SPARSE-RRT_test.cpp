@@ -94,8 +94,8 @@ int main(int argc, char** argv)
 		    bestState = tempState;
 		}
 	    }
-	    if(bestDist < dist(sampleState,nearest->getNodeState()))
-	       goodSample = 1;
+//	    if(bestDist < dist(sampleState,nearest->getNodeState()))
+//	       goodSample = 1;
 	}
 	goodSample = 0;
 	tree.push_back(new SPARSE_RRTNode(bestState, bestControl, nearest, nearest->getNodeTime() + TIME_STEP));
@@ -112,40 +112,53 @@ int main(int argc, char** argv)
     // Output solution distance for batch
     std::cout<<minDist<<std::endl;
     //Save the solution
-    std::vector<SPARSE_RRTNode*> solution;
-    SPARSE_RRTNode* prevNode;
-    while(solNode->getNodeParent() != NULL) {
-	solution.push_back(solNode);
-	prevNode = solNode;
-	solNode = solNode->getNodeParent();
-    }
-    solution.push_back(solNode);
-
+    // std::vector<SPARSE_RRTNode*> solution;
+    // SPARSE_RRTNode* prevNode;
+    // while(solNode->getNodeParent() != NULL) {
+    // 	solution.push_back(solNode);
+    // 	prevNode = solNode;
+    // 	solNode = solNode->getNodeParent();
+    // }
+    // solution.push_back(solNode);
+    tree.shrink_to_fit();
     std::ofstream out_file(filename, std::ios::trunc);
-    out_file <<"X Xd Y Yd Th Thd s Fn Ft"<<std::endl;
+    out_file <<"X Xd Y Yd Th Thd s Fn Ft P"<<std::endl;
     Eigen::Matrix<double, STATE_SPACE_DIM,1> tempState;
     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> tempControl;
     SPARSE_RRTNode* currentNode;
-    while(!solution.empty() && out_file.is_open()) {
-	currentNode = solution.back();
-	solution.pop_back();
-	tempState = currentNode->getNodeState();
-	tempControl = currentNode->getNodeControl();
-	out_file << tempState(0,0) << " " << tempState(1,0) << " " << tempState(2,0) << " " \
-		 << tempState(3,0) << " " << tempState(4,0) << " " << tempState(5,0) << " " \
-	         << tempControl(0,0) << " " << tempControl(1,0) << " " << tempControl(2,0) << std::endl;
-    }
+    // while(!solution.empty() && out_file.is_open()) {
+    // 	currentNode = solution.back();
+    // 	solution.pop_back();
+    // 	tempState = currentNode->getNodeState();
+    // 	tempControl = currentNode->getNodeControl();
+    // 	out_file << tempState(0,0) << " " << tempState(1,0) << " " << tempState(2,0) << " " \
+    // 		 << tempState(3,0) << " " << tempState(4,0) << " " << tempState(5,0) << " " \
+    // 	         << tempControl(0,0) << " " << tempControl(1,0) << " " << tempControl(2,0) << std::endl;
+    // }
 
-    for(int ii = tree.length() - 1; ii >= 0; ii--} {
+//    for(int ii = tree.length() - 1; ii >= 0; ii--} {
+    SPARSE_RRTNode* currentParent;
+    for(int ii = 0; ii < tree.size(); ii++) {
 	currentNode = tree[ii];
 	currentParent = currentNode->getNodeParent();
-	for(int j = 0; j < ii; j++) {
-	    if(tree[j] == currentParent)
-		break;
+	if(currentParent != NULL) {
+	    int j = 0;
+	    for(j = 0; j < ii-1; j++) {
+		if(tree[j] == currentParent)
+		    break;
+	    }
+	    tempState = currentNode->getNodeState();
+	    tempControl = currentNode->getNodeControl();
+	    out_file << tempState(0,0) << " " << tempState(1,0) << " " << tempState(2,0) << " " \
+		     << tempState(3,0) << " " << tempState(4,0) << " " << tempState(5,0) << " " \
+		     << tempControl(0,0) << " " << tempControl(1,0) << " " << tempControl(2,0)  \
+		     << " " << j <<std::endl;
+	} else {
+	    out_file << tempState(0,0) << " " << tempState(1,0) << " " << tempState(2,0) << " " \
+		     << tempState(3,0) << " " << tempState(4,0) << " " << tempState(5,0) << " " \
+		     << tempControl(0,0) << " " << tempControl(1,0) << " " << tempControl(2,0)  \
+		     << " " << -1 <<std::endl;
 	}
-	tempState = currentNode->getNodeState();
-	tempControl = currentNode->getNodeControl();
-	out_file << temp
     }
     return 0;
 }

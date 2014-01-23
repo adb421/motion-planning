@@ -36,18 +36,6 @@ cmath
 omp.h
 -
 
-/home/adam/Dropbox/Manipulation/MotionPlanning/AStar/AStarTest.cpp
-iostream
--
-fstream
--
-queue
--
-AStarNode.h
-/home/adam/Dropbox/Manipulation/MotionPlanning/AStar/AStarNode.h
-ctime
--
-
 /usr/local/include/Eigen/Cholesky
 Core
 /usr/local/include/Eigen/Core

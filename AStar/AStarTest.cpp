@@ -7,7 +7,7 @@
 #include "AStarNode.h"
 #include <ctime>
 
-#define MAX_STEPS 20000
+#define MAX_STEPS 30000
 
 int main(int argc, char** argv)
 {
@@ -17,13 +17,11 @@ int main(int argc, char** argv)
     double distToGoal;
     //Set up the priority quee
     std::priority_queue<AStarNode*, std::vector<AStarNode*>, AStarNodePtrCompare> openQueue;
-//    std::vector<AStarNode*> closedNodes;
     std::vector<AStarNode*> expandedNodes;
-    std::array<double, STATE_SPACE_DIM> initState = {0,0,0,0,0,0};
-//    std::array<double, STATE_SPACE_DIM> goalState = {-0.2, 0.0, -0.1, 0.0, 0.0, 0.0};
-    std::array<double, STATE_SPACE_DIM> goalState = {-0.3, 0.0, 0.0, -3.0, M_PI, 0.0};
-//    std::array<double, STATE_SPACE_DIM> goalState = {0,0,0,0,0,0};
-//    std::array<double, STATE_SPACE_DIM> initState = {-0.5, 0.0, 0.0, -10.0, M_PI, 0.0};
+    Eigen::Matrix<double, STATE_SPACE_DIM,1> initState;
+    initState << 0,0,0,0,0,0;
+    Eigen::Matrix<double, STATE_SPACE_DIM,1> goalState;
+    goalState << -0.2, -0.0525, 0.1, 0.0245, 0.4115, 0.8511;
     openQueue.push(new AStarNode(initState,goalState));
 
     AStarNode* currentNode; //Temporary node to hold whats in The queue
@@ -62,13 +60,10 @@ int main(int argc, char** argv)
     AStarNode* solNode = currentNode;
     AStarNode* prevNode;
     while(solNode->getNodeParent() != NULL) {
-//	std::cout << solNode->getNodeParent() << std::endl;
 	solution.push_back(solNode);
 	prevNode = solNode;
 	solNode = solNode->getNodeParent();
 	std::cout<<"Cost To Go: "<<solNode->getNodeCostToGo()<<std::endl;
-//	std::cout << solNode << std::endl;
-//	std::cout << solNode->getNodeParent() << std::endl;
 	if(solNode == prevNode) {
 	    std::cout << "weird pointer behavior" << std::endl;
 	    break;
@@ -80,16 +75,16 @@ int main(int argc, char** argv)
     std::cout << "Outputting files" << std::endl;
     std::ofstream out_file("Solution.txt", std::ios::trunc);
     out_file <<"X Xd Y Yd Th Thd s Fn Ft"<<std::endl;
-    std::array<double, STATE_SPACE_DIM> tempState;
-    std::array<double, CONTROL_SPACE_DIM> tempControl;
+    Eigen::Matrix<double, STATE_SPACE_DIM, 1> tempState;
+    Eigen::Matrix<double, CONTROL_SPACE_DIM, 1> tempControl;
     while(!solution.empty() && out_file.is_open()) {
 	currentNode = solution.back();
 	solution.pop_back();
 	tempState = currentNode->getNodeState();
 	tempControl = currentNode->getNodeControl();
-	out_file << tempState[0] << " " << tempState[1] << " " << tempState[2] << " " \
-		 << tempState[3] << " " << tempState[4] << " " << tempState[5] << " " \
-	         << tempControl[0] << " " << tempControl[1] << " " << tempControl[2] << std::endl;
+	out_file << tempState(0,0) << " " << tempState(1,0) << " " << tempState(2,0) << " " \
+		 << tempState(3,0) << " " << tempState(4,0) << " " << tempState(5,0) << " " \
+	         << tempControl(0,0) << " " << tempControl(1,0) << " " << tempControl(2,0) << std::endl;
     }
     std::cout<<"Time: " << (std::clock() - start)/(double)CLOCKS_PER_SEC<<std::endl;
     return 0;
