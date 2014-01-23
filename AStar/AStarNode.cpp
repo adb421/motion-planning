@@ -11,14 +11,15 @@ double Qf_array[STATE_SPACE_DIM*STATE_SPACE_DIM] =			\
 // double R_array[9] = {1.0/pow(LO*2.0,2), 0,   0,	\
 // 		     0,   1.0/pow(MAX_FN-MIN_FN,2), 0,	\
 // 		     0,   0,   1.0/pow(MU*2.0,2)};
-double R_array[16] = {1.0/pow(MAX_FN-MIN_FN,2), 0, 0, 0,	\
-		      0, 1.0/pow(MAX_FN-MIN_FN,2), 0, 0,	\
-		      0, 0, 1.0/pow(MAX_FN-MIN_FN,2), 0,	\
-		      0, 0, ,0, 1.0/pow(MAX_FN-MIN_FN,2)};
+double R_array[CONTROL_SPACE_DIM*CONTROL_SPACE_DIM] =		\
+{1.0/pow(MAX_FN-MIN_FN,2), 0, 0, 0,				\
+ 0, 1.0/pow(MAX_FN-MIN_FN,2), 0, 0,				\
+ 0, 0, 1.0/pow(MAX_FN-MIN_FN,2), 0,				\
+ 0, 0, 0, 1.0/pow(MAX_FN-MIN_FN,2)};
 
 
-Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> Qf = Eigen::Map<Eigen::MatrixXd>(Qf_array, 6, 6);
-Eigen::Matrix<double, CONTROL_SPACE_DIM, CONTROL_SPACE_DIM> Rf = Eigen::Map<Eigen::MatrixXd>(R_array, 3, 3);
+Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> Qf = Eigen::Map<Eigen::MatrixXd>(Qf_array, STATE_SPACE_DIM, STATE_SPACE_DIM);
+Eigen::Matrix<double, CONTROL_SPACE_DIM, CONTROL_SPACE_DIM> Rf = Eigen::Map<Eigen::MatrixXd>(R_array, CONTROL_SPACE_DIM, CONTROL_SPACE_DIM);
 
 //Default Constructor
 //Assume root of tree with zero initial state
@@ -36,7 +37,7 @@ AStarNode::AStarNode() {
 }
 
 //Constructor for root
-AStarNode::AStarNode(Eigen::Matrix<double, STATE_SPACE_DIM,1> setState, Eigen::Matrix<double, STATE_SPACE_DIM, 1> setGoal) {
+AStarNode::AStarNode(Eigen::Matrix<double, STATE_SPACE_DIM, 1> setState, Eigen::Matrix<double, STATE_SPACE_DIM, 1> setGoal) {
     parent = NULL;
     nodeState = setState;
     goalState = setGoal;
@@ -49,9 +50,9 @@ AStarNode::AStarNode(Eigen::Matrix<double, STATE_SPACE_DIM,1> setState, Eigen::M
 }
 
 //Constructor for most nodes
-AStarNode::AStarNode(AStarNode *setParent, Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> setState, \
+AStarNode::AStarNode(AStarNode *setParent, Eigen::Matrix<double, STATE_SPACE_DIM, 1> setState, \
 		     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> setControl, \
-		     Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> setGoal, \
+		     Eigen::Matrix<double, STATE_SPACE_DIM, 1> setGoal, \
 		     double setCost, double setTime) {
     parent = setParent;
     nodeState = setState;
@@ -69,7 +70,7 @@ AStarNode* AStarNode::getNodeParent()
 }
 
 //Return the state contained by this node
-Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> const & AStarNode::getNodeState() const
+Eigen::Matrix<double, STATE_SPACE_DIM, 1> const & AStarNode::getNodeState() const
 {
     return nodeState;
 }
@@ -137,8 +138,8 @@ std::vector<AStarNode*> AStarNode::expand()
 }
 
 AStarNode* AStarNode::spawn(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray) {
-    Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> state = nodeState;
-    Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> prevState;
+    Eigen::Matrix<double, STATE_SPACE_DIM, 1> state = nodeState;
+    Eigen::Matrix<double, STATE_SPACE_DIM, 1> prevState;
     double time = nodeTime;
     double newCost = cost;
     while(time <= TIME_STEP + nodeTime) {
@@ -155,32 +156,34 @@ AStarNode* AStarNode::spawn(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlAr
 
 //Contact, normal, tangent - control
 //xo, xod, yo, yod, tho, thod - state
-Eigen::Matrix<double, CONTROL_SPACE_DIM,1> MapControlToWorld(Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray) {
+Eigen::Matrix<double, CONTROL_SPACE_DIM,1> MapControlToWorld(Eigen::Matrix<double, STATE_SPACE_DIM, 1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray) {
     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> worldControl;
-    double theta = state[4];
-    double F1 = controlArray[0];
-    double F2 = controlArray[1];
-    double F3 = controlArray[2];
-    double F4 = controlArray[3];
+    double theta = state(4,0);
+    double F1 = controlArray(0,0);
+    double F2 = controlArray(1,0);
+    double F3 = controlArray(2,0);
+    double F4 = controlArray(3,0);
     worldControl(0,0) = (F4 + F2)*sin(BETA-theta) -  (F3 + F1)*sin(theta + BETA);
     worldControl(1,0) = (F1+F3)*cos(theta+BETA) + (F2 + F4)*cos(BETA-theta);
     worldControl(2,0) = LO*cos(BETA)*(F3+F4-F2-F1) + WO*sin(BETA)*(F2+F4-F1-F3);
+    worldControl(3,0) = 0;
     return worldControl;
 }
 
-double costToGo(Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> state, Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> goalState)
+double costToGo(Eigen::Matrix<double, STATE_SPACE_DIM, 1> state, Eigen::Matrix<double, STATE_SPACE_DIM, 1> goalState)
 {
-    Eigen::Matrix<double, STATE_SPACE_DIM, 1> errorVec = stateVec - goalVec;
+    Eigen::Matrix<double, STATE_SPACE_DIM, 1> errorVec = state - goalState;
 
 
     double stateCost = (errorVec.transpose()*Qf*errorVec)(0,0);
     return stateCost;
 }
 
-Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> OneStep(Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> worldControl) {
-    Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> derivState = {state[1], worldControl[0]/MO, \
-									  state[3], worldControl[1]/MO - GRAV, \
-									  state[5], worldControl[2]/JO};
+Eigen::Matrix<double, STATE_SPACE_DIM, 1> OneStep(Eigen::Matrix<double, STATE_SPACE_DIM, 1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> worldControl) {
+    Eigen::Matrix<double, STATE_SPACE_DIM, 1> derivState;
+    derivState << state(1,0), worldControl(0,0)/MO,			\
+									  state(2,0), worldControl(1,0)/MO - GRAV, \
+									  state(5,0), worldControl(2,0)/JO;
     if(!BACKWARDS_INT)
 	state += derivState*INT_TIME_STEP;
     else
@@ -188,14 +191,12 @@ Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> OneStep(Eigen::Matrix<do
     return state;
 }
 
-double realCost(Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray, Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> prevState, Eigen::Matrix<double, STATE_SPACE_DIM, STATE_SPACE_DIM> goalState) {
-
-    desControl << -LO, GRAV*MO, 0;
+double realCost(Eigen::Matrix<double, STATE_SPACE_DIM, 1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray, Eigen::Matrix<double, STATE_SPACE_DIM, 1> prevState, Eigen::Matrix<double, STATE_SPACE_DIM, 1> goalState) {
     
     double controlCost = \
-	((controlVec - desControl).transpose()*Rf*(controlVec - desControl))(0,0);
+	(controlArray.transpose()*Rf*controlArray)(0,0);
 
     double stateCost =						\
-	((stateVec - goalVec).transpose()*Qf*(stateVec - goalVec))(0,0);
+	((state - goalState).transpose()*Qf*(state - goalState))(0,0);
     return (controlCost + stateCost)*INT_TIME_STEP;    
 }

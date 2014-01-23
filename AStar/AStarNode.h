@@ -19,17 +19,17 @@ class AStarNode {
 public:
     //Constructors
     AStarNode();
-    AStarNode(std::array<double,STATE_SPACE_DIM> setState, std::array<double,STATE_SPACE_DIM> setGoal);
-    AStarNode(AStarNode *setParent, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> setState, \
+    AStarNode(Eigen::Matrix<double,STATE_SPACE_DIM,1> setState, Eigen::Matrix<double,STATE_SPACE_DIM,1> setGoal);
+    AStarNode(AStarNode *setParent, Eigen::Matrix<double, STATE_SPACE_DIM,1> setState, \
 	      Eigen::Matrix<double, CONTROL_SPACE_DIM,1> setControl, \
-	      Eigen::Matrix<double, CONTROL_SPACE_DIM,1> setGoal, \
+	      Eigen::Matrix<double, STATE_SPACE_DIM,1> setGoal, \
 	      double setCost, double setTime);
     //Destructor
     // ~AStarNode();
 
     //Just need to get out the parameters
     AStarNode* getNodeParent();
-    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> const & getNodeState() const;
+    Eigen::Matrix<double, STATE_SPACE_DIM,1> const & getNodeState() const;
     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> const & getNodeControl() const;
     double getNodePriority() const;
     double getNodeCostToCome();
@@ -43,8 +43,8 @@ public:
 protected:
     AStarNode* parent; //Where this node came from
     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> nodeControl; //Array representing the control used to get here
-    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> nodeState; //Array representing the state of the node
-    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalState;
+    Eigen::Matrix<double, STATE_SPACE_DIM,1> nodeState; //Array representing the state of the node
+    Eigen::Matrix<double, STATE_SPACE_DIM,1> goalState;
     double cost; //"Cost to come" of the node
     double heur; //"Cost to go" of the node
     double nodeTime;
@@ -58,15 +58,15 @@ struct AStarNodePtrCompare
 	}
 };
 
-Eigen::Matrix<double, CONTROL_SPACE_DIM,1> MapControlToWorld(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray);
+Eigen::Matrix<double, CONTROL_SPACE_DIM,1> MapControlToWorld(Eigen::Matrix<double, STATE_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray);
 
-double costToGo(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalState);
+double costToGo(Eigen::Matrix<double, STATE_SPACE_DIM,1> state, Eigen::Matrix<double, STATE_SPACE_DIM,1> goalState);
 
-Eigen::Matrix<double, CONTROL_SPACE_DIM,1> OneStep(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> worldControl);
+Eigen::Matrix<double, STATE_SPACE_DIM,1> OneStep(Eigen::Matrix<double, STATE_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> worldControl);
 
-/* double realCost(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalState); */
+/* double realCost(Eigen::Matrix<double, STATE_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray, Eigen::Matrix<double, STATE_SPACE_DIM,1> goalState); */
 
-double realCost(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> prevState, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalState);
+double realCost(Eigen::Matrix<double, STATE_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray, Eigen::Matrix<double, STATE_SPACE_DIM,1> prevState, Eigen::Matrix<double, STATE_SPACE_DIM,1> goalState);
 
 
 #endif
