@@ -11,7 +11,7 @@
 #include <algorithm>
 #define  _USE_MATH_DEFINES
 #include <cmath>
-#include "../Parameters.h"
+#include "Parameters.h"
 #include <omp.h>
 
 
@@ -20,31 +20,31 @@ public:
     //Constructors
     AStarNode();
     AStarNode(std::array<double,STATE_SPACE_DIM> setState, std::array<double,STATE_SPACE_DIM> setGoal);
-    AStarNode(AStarNode *setParent, std::array<double, STATE_SPACE_DIM> setState, \
-	      std::array<double, CONTROL_SPACE_DIM> setControl, \
-	      std::array<double, STATE_SPACE_DIM> setGoal, \
+    AStarNode(AStarNode *setParent, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> setState, \
+	      Eigen::Matrix<double, CONTROL_SPACE_DIM,1> setControl, \
+	      Eigen::Matrix<double, CONTROL_SPACE_DIM,1> setGoal, \
 	      double setCost, double setTime);
     //Destructor
     // ~AStarNode();
 
     //Just need to get out the parameters
     AStarNode* getNodeParent();
-    std::array<double, STATE_SPACE_DIM> const & getNodeState() const;
-    std::array<double, CONTROL_SPACE_DIM> const & getNodeControl() const;
+    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> const & getNodeState() const;
+    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> const & getNodeControl() const;
     double getNodePriority() const;
     double getNodeCostToCome();
     double getNodeCostToGo();
     double getNodeTime();
-    AStarNode* spawn(std::array<double, CONTROL_SPACE_DIM> controlArray);
+    AStarNode* spawn(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray);
 
     //Return the expanded nodes
     std::vector<AStarNode*> expand();
     
 protected:
     AStarNode* parent; //Where this node came from
-    std::array<double, CONTROL_SPACE_DIM> nodeControl; //Array representing the control used to get here
-    std::array<double, STATE_SPACE_DIM> nodeState; //Array representing the state of the node
-    std::array<double, STATE_SPACE_DIM> goalState;
+    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> nodeControl; //Array representing the control used to get here
+    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> nodeState; //Array representing the state of the node
+    Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalState;
     double cost; //"Cost to come" of the node
     double heur; //"Cost to go" of the node
     double nodeTime;
@@ -58,15 +58,15 @@ struct AStarNodePtrCompare
 	}
 };
 
-std::array<double, CONTROL_SPACE_DIM> MapControlToWorld(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray);
+Eigen::Matrix<double, CONTROL_SPACE_DIM,1> MapControlToWorld(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray);
 
-double costToGo(std::array<double, STATE_SPACE_DIM> state, std::array<double, STATE_SPACE_DIM> goalState);
+double costToGo(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalState);
 
-std::array<double, STATE_SPACE_DIM> OneStep(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> worldControl);
+Eigen::Matrix<double, CONTROL_SPACE_DIM,1> OneStep(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> worldControl);
 
-/* double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> goalState); */
+/* double realCost(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalState); */
 
-double realCost(std::array<double, STATE_SPACE_DIM> state, std::array<double, CONTROL_SPACE_DIM> controlArray, std::array<double, STATE_SPACE_DIM> prevState, std::array<double, STATE_SPACE_DIM> goalState);
+double realCost(Eigen::Matrix<double, CONTROL_SPACE_DIM,1> state, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> controlArray, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> prevState, Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalState);
 
 
 #endif
