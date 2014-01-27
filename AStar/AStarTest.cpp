@@ -7,7 +7,7 @@
 #include "AStarNode.h"
 #include <ctime>
 
-#define MAX_STEPS 30000
+#define MAX_STEPS 15000
 
 int main(int argc, char** argv)
 {

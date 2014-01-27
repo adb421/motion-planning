@@ -6,10 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/home/adam/Dropbox/Manipulation/MotionPlanning/AStar/AStarNode.cpp
-AStarNode.h
-/home/adam/Dropbox/Manipulation/MotionPlanning/AStar/AStarNode.h
-
 /home/adam/Dropbox/Manipulation/MotionPlanning/AStar/AStarNode.h
 stdio.h
 -
