@@ -6,7 +6,7 @@
 #include <ctime>
 #include <string>
 
-#define MAX_SAMPLES 20000
+#define MAX_SAMPLES 100
 
 int main(int argc, char** argv)
 {
@@ -29,9 +29,11 @@ int main(int argc, char** argv)
     Eigen::Matrix<double, CONTROL_SPACE_DIM,1> goalControl;
     initState << 0, 0, 0, 0, 0, 0;
     goalState << -0.2, -0.0525, 0.1, 0.0245, 0.4115, 0.8511; //Should get us from dyn grasp to roll
-    std::array<int,3> controlCare = {1,0,0};
-    goalControl << -LO, 0.0, 0.0; //Only care about control input 1 anyway
-    basicControlSample << 0, GRAV*MO, 0;
+    std::array<int,CONTROL_SPACE_DIM> controlCare = {0,0,1,1};
+    goalControl << 0.0, 0.0, 0.0, 0.0;
+    //    goalControl << -LO, 0.0, 0.0; //Only care about control input 1 anyway
+//    basicControlSample << 0, GRAV*MO, 0;
+    basicControlSample << 0.5*MAX_FN, 0.5*MAX_FN, 0.5*MAX_FN, 0.5*MAX_FN;
     tree.push_back(new SPARSE_RRTNode(initState));
     bool solFound = 0;
     int count = 0;
