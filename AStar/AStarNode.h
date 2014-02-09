@@ -36,6 +36,12 @@ struct mapCompare
 	}
 };
 
+class AStarNode;
+typedef struct AStarNodePtr
+{
+    AStarNode* ptr;
+} AStarNode_ptr;
+
 class AStarNode {
 public:
     //Constructors
@@ -72,11 +78,7 @@ protected:
     double nodeTime;
 };
 
-struct AStarNodePtr
-{
-    AStarNode* ptr;
-};
-typedef struct AStarNodePtr AStarNode_ptr;
+
 
 struct AStarNodePtrCompare
 {

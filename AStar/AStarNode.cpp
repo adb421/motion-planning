@@ -31,7 +31,7 @@ Eigen::Matrix<double, CONTROL_SPACE_DIM, CONTROL_SPACE_DIM> Rf = Eigen::Map<Eige
 //Default Constructor
 //Assume root of tree with zero initial state
 AStarNode::AStarNode() {
-    parent = NULL;
+    parent.ptr = NULL;
     good = true;
     int j;
     for(j = 0; j < STATE_SPACE_DIM; j++)
@@ -46,7 +46,7 @@ AStarNode::AStarNode() {
 
 //Constructor for root
 AStarNode::AStarNode(StateVector_t setState, StateVector_t setGoal) {
-    parent = NULL;
+    parent.ptr = NULL;
     good = true;
     nodeState = setState;
     goalState = setGoal;
@@ -158,11 +158,11 @@ std::vector<AStarNode_ptr> AStarNode::expand(map_t &grid)
 			} else {
 //			else {
 //			    badCount++;
-			    delete tempNode;
+			    delete tempNode.ptr;
 			}
 		    }
 		    else {
-			delete tempNode;
+			delete tempNode.ptr;
 		    }
 		}
 		for(int it = 0; it < tempChildren.size(); it++) {
@@ -215,8 +215,10 @@ AStarNode_ptr AStarNode::spawn(ControlVector_t controlArray) {
 //	newCost += realCost(state, controlArray, goalState);
 	time += INT_TIME_STEP;
     }
+    AStarNode_ptr myPtr;
+    myPtr.ptr = this;
     AStarNode_ptr tmp;
-    tmp.ptr = new AStarNode(this, state, controlArray, goalState, newCost, time);
+    tmp.ptr = new AStarNode(myPtr, state, controlArray, goalState, newCost, time);
     return tmp;
 }
 

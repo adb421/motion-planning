@@ -36,12 +36,12 @@ int main(int argc, char** argv)
 	std::cout<<*it<<std::endl;
     }
     AStarNode_ptr tmpNode = currentNode;
-    std::cout<<"currentNode: "<<tmpNode<<std::endl;
+    std::cout<<"currentNode: "<<tmpNode.ptr<<std::endl;
     std::cout<<tmpNode.ptr->getNodeState()<<std::endl;
     std::cout<<"Count: ";
     std::cout<<grid.count(tmpArray)<<std::endl;
     bool insCheck = grid.insert(make_pair(tmpArray,tmpNode)).second;
-    std::cout<<"map ptr: "<<grid[tmpArray]<<std::endl;
+    std::cout<<"map ptr: "<<grid[tmpArray].ptr<<std::endl;
     tmpArray[0] = 2;
     grid[tmpArray] = tmpNode;
     std::cout<<"Count: "<<grid.count(tmpArray)<<std::endl;
@@ -104,12 +104,12 @@ int main(int argc, char** argv)
     std::vector<AStarNode_ptr> solution;
     AStarNode_ptr solNode = currentNode;
     AStarNode_ptr prevNode;
-    while(solNode.ptr->getNodeParent() != NULL) {
+    while(solNode.ptr->getNodeParent().ptr != NULL) {
 	solution.push_back(solNode);
 	prevNode = solNode;
-	solNode = solNode.ptr->getNodeParent();
+	solNode.ptr = solNode.ptr->getNodeParent().ptr;
 	std::cout<<"Cost To Go: "<<solNode.ptr->getNodeCostToGo()<<std::endl;
-	if(solNode == prevNode) {
+	if(solNode.ptr == prevNode.ptr) {
 	    std::cout << "weird pointer behavior" << std::endl;
 	    break;
 	}
