@@ -74,7 +74,7 @@ AStarNode::AStarNode(AStarNode *setParent, StateVector_t setState, \
 }
 
 //Return a pointer to the parent
-AStarNode* AStarNode::getNodeParent()
+AStarNode_ptr AStarNode::getNodeParent()
 {
     return parent;
 }
@@ -114,16 +114,16 @@ double AStarNode::getNodeCostToGo()
 }
 
 //Expand the node, return all child nodes as a vector
-std::vector<AStarNode*> AStarNode::expand(map_t &grid)
+std::vector<AStarNode_ptr> AStarNode::expand(map_t &grid)
 {
     Eigen::ArrayXd F1 = Eigen::ArrayXd::LinSpaced(DISC_FN,MIN_FN,MAX_FN);
     Eigen::ArrayXd F2 = Eigen::ArrayXd::LinSpaced(DISC_FN,MIN_FN,MAX_FN);
     Eigen::ArrayXd F3 = Eigen::ArrayXd::LinSpaced(DISC_FN,MIN_FN,MAX_FN);
     Eigen::ArrayXd F4 = Eigen::ArrayXd::LinSpaced(DISC_FN,MIN_FN,MAX_FN);
     ControlVector_t controlArray;
-    std::vector<AStarNode*> childNodes;//(DISC_S*DISC_FN*DISC_FT);
-    std::vector<AStarNode*> tempChildren;
-    AStarNode* tempNode;
+    std::vector<AStarNode_ptr> childNodes;//(DISC_S*DISC_FN*DISC_FT);
+    std::vector<AStarNode_ptr> tempChildren;
+    AStarNode_ptr tempNode;
 
     int i, j, k, l;
     for(i =  0; i < F1.size(); i++)
@@ -149,9 +149,9 @@ std::vector<AStarNode*> AStarNode::expand(map_t &grid)
 			    std::cout<<"Count: "<<grid.count(tmp)<<std::endl;
 			    std::cout<<"Done."<<std::endl;
 			}
-			else if(grid[snapToGrid(tempNode)]->getNodePriority() > tempNode->getNodePriority()){
+			else if(grid[snapToGrid(tempNode)].ptr->getNodePriority() > tempNode.ptr->getNodePriority()){
 			    tempChildren.push_back(tempNode);
-			    grid[snapToGrid(tempNode)]->good = false;
+			    grid[snapToGrid(tempNode)].ptr->good = false;
 			    grid.erase(grid.find(snapToGrid(tempNode)));
 			    grid[snapToGrid(tempNode)] = tempNode;
 
@@ -181,10 +181,10 @@ std::vector<AStarNode*> AStarNode::expand(map_t &grid)
     return childNodes;
 }
 
-int violateConstraints(AStarNode* checkNode) {
+int violateConstraints(AStarNode_ptr checkNode) {
     int violated = 0;
     StateVector_t state = \
-	checkNode->getNodeState();
+	checkNode.ptr->getNodeState();
     if(state(0,0) > MAX_X || state(0,0) < MIN_X) {
 	violated = 1;
     } else if(fabs(state(1,0)) > MAXVEL_XY) {
@@ -201,7 +201,7 @@ int violateConstraints(AStarNode* checkNode) {
     return violated;
 }
 
-AStarNode* AStarNode::spawn(ControlVector_t controlArray) {
+AStarNode_ptr AStarNode::spawn(ControlVector_t controlArray) {
     StateVector_t state = nodeState;
     StateVector_t prevState;
     double time = nodeTime;
@@ -215,7 +215,9 @@ AStarNode* AStarNode::spawn(ControlVector_t controlArray) {
 //	newCost += realCost(state, controlArray, goalState);
 	time += INT_TIME_STEP;
     }
-    return new AStarNode(this, state, controlArray, goalState, newCost, time);
+    AStarNode_ptr tmp;
+    tmp.ptr = new AStarNode(this, state, controlArray, goalState, newCost, time);
+    return tmp;
 }
 
 //Contact, normal, tangent - control
@@ -442,9 +444,9 @@ double euclideanDistance(StateVector_t state1, StateVector_t state2) {
     return (((state1 - state2).transpose())*(state1-state2))(0,0);
 }
 
-std::array<int, STATE_SPACE_DIM> snapToGrid(AStarNode* nodeToSnap) {
+std::array<int, STATE_SPACE_DIM> snapToGrid(AStarNode_ptr nodeToSnap) {
     std::array<int, STATE_SPACE_DIM> gridValues;
-    StateVector_t nodeState = nodeToSnap->getNodeState();
+    StateVector_t nodeState = nodeToSnap.ptr->getNodeState();
     std::array<double, STATE_SPACE_DIM> discVals = {GRID_DISC_X, GRID_DISC_VEL_XY, GRID_DISC_Y, GRID_DISC_VEL_XY, \
 						 GRID_DISC_TH, GRID_DISC_VEL_TH};
     for(int i = 0; i < STATE_SPACE_DIM; i++) {

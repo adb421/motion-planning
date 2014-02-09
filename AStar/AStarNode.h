@@ -41,7 +41,7 @@ public:
     //Constructors
     AStarNode();
     AStarNode(StateVector_t setState, StateVector_t setGoal);
-    AStarNode(AStarNode *setParent, StateVector_t setState, \
+    AStarNode(AStarNode_ptr setParent, StateVector_t setState, \
 	      ControlVector_t setControl, \
 	      StateVector_t setGoal, \
 	      double setCost, double setTime);
@@ -49,21 +49,21 @@ public:
     // ~AStarNode();
 
     //Just need to get out the parameters
-    AStarNode* getNodeParent();
+    AStarNode_ptr getNodeParent();
     StateVector_t const & getNodeState() const;
     ControlVector_t const & getNodeControl() const;
     double getNodePriority() const;
     double getNodeCostToCome();
     double getNodeCostToGo();
     double getNodeTime();
-    AStarNode* spawn(ControlVector_t controlArray);
+    AStarNode_ptr spawn(ControlVector_t controlArray);
     bool good;
 
     //Return the expanded nodes
-    std::vector<AStarNode*> expand(std::map<std::array<int,STATE_SPACE_DIM>, AStarNode*, mapCompare> &grid);
+    std::vector<AStarNode_ptr> expand(std::map<std::array<int,STATE_SPACE_DIM>, AStarNode_ptr, mapCompare> &grid);
     
 protected:
-    AStarNode* parent; //Where this node came from
+    AStarNode_ptr parent; //Where this node came from
     ControlVector_t nodeControl; //Array representing the control used to get here
     StateVector_t nodeState; //Array representing the state of the node
     StateVector_t goalState;
@@ -72,20 +72,26 @@ protected:
     double nodeTime;
 };
 
+struct AStarNodePtr
+{
+    AStarNode* ptr;
+};
+typedef struct AStarNodePtr AStarNode_ptr;
+
 struct AStarNodePtrCompare
 {
-    bool operator()(const AStarNode* n1, const AStarNode* n2) const
+    bool operator()(const AStarNode_ptr n1, const AStarNode_ptr n2) const
 	{
-	    return n1->getNodePriority() > n2->getNodePriority();
+	    return n1.ptr->getNodePriority() > n2.ptr->getNodePriority();
 	}
 };
 
 
-typedef std::map<std::array<int, STATE_SPACE_DIM>, AStarNode*, mapCompare> map_t;
+typedef std::map<std::array<int, STATE_SPACE_DIM>, AStarNode_ptr, mapCompare> map_t;
 
-typedef std::pair<std::array<int, STATE_SPACE_DIM>, AStarNode*> pair_t;
+typedef std::pair<std::array<int, STATE_SPACE_DIM>, AStarNode_ptr> pair_t;
 
-std::array<int, STATE_SPACE_DIM> snapToGrid(AStarNode* nodeToSnap);
+std::array<int, STATE_SPACE_DIM> snapToGrid(AStarNode_ptr nodeToSnap);
 
 ControlVector_t MapControlToWorld(StateVector_t state, ControlVector_t controlArray);
 
@@ -102,7 +108,7 @@ Eigen::VectorXcd polynomialRoots(std::array<double,5> coeffs);
 
 double minTimePoly(std::array<double,5> coeffs);
 
-int violateConstraints(AStarNode* checkNode);
+int violateConstraints(AStarNode_ptr checkNode);
 
 std::array<double,5> getMinTimeCoefficients(StateVector_t x0, StateVector_t x1);
 
