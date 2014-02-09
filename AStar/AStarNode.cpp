@@ -59,7 +59,7 @@ AStarNode::AStarNode(StateVector_t setState, StateVector_t setGoal) {
 }
 
 //Constructor for most nodes
-AStarNode::AStarNode(AStarNode *setParent, StateVector_t setState, \
+AStarNode::AStarNode(AStarNode_ptr setParent, StateVector_t setState, \
 		     ControlVector_t setControl, \
 		     StateVector_t setGoal, \
 		     double setCost, double setTime) {
