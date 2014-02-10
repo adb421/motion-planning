@@ -28,7 +28,8 @@ int main(int argc, char** argv)
     AStarNode_ptr currentNode; //Temporary node to hold whats in The queue
     AStarNode_ptr bestNode;
     currentNode.ptr = new AStarNode(initState, goalState);
-    std::array<int, STATE_SPACE_DIM> tmpArray = snapToGrid(currentNode);
+//    std::array<int, STATE_SPACE_DIM> tmpArray = snapToGrid(currentNode);
+    std::array<int, STATE_SPACE_DIM> tmpArray = {0, 0, 0, 0, 0, 0};
     std::array<int, STATE_SPACE_DIM>::iterator it;
     for(it = tmpArray.begin();
 	it != tmpArray.end();
