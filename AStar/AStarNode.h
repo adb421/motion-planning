@@ -19,22 +19,11 @@
 
 void printBadCount();
 
+class AStarNode;
+
 typedef Eigen::Matrix<double, STATE_SPACE_DIM,1> StateVector_t;
 typedef Eigen::Matrix<double, CONTROL_SPACE_DIM,1> ControlVector_t;
-struct mapCompare
-{
-    bool operator()							\
-	(const std::array<int, STATE_SPACE_DIM> &lhs,			\
-	 const std::array<int, STATE_SPACE_DIM> &rhs) const
-	{
-	    for(int i = 0; i < STATE_SPACE_DIM; i++) {
-		if(lhs[i] > rhs[i]) {
-		    return false;
-		}
-	    }
-	    return true;
-	}
-};
+typedef std::map<std::array<int, STATE_SPACE_DIM>, AStarNode*> map_t;
 
 class AStarNode {
 public:
@@ -60,7 +49,7 @@ public:
     bool good;
 
     //Return the expanded nodes
-    std::vector<AStarNode*> expand(std::map<std::array<int,STATE_SPACE_DIM>, AStarNode*, mapCompare> &grid);
+    std::vector<AStarNode*> expand(map_t  &grid);
     
 protected:
     AStarNode* parent; //Where this node came from
@@ -79,11 +68,6 @@ struct AStarNodePtrCompare
 	    return n1->getNodePriority() > n2->getNodePriority();
 	}
 };
-
-
-typedef std::map<std::array<int, STATE_SPACE_DIM>, AStarNode*, mapCompare> map_t;
-
-typedef std::pair<std::array<int, STATE_SPACE_DIM>, AStarNode*> pair_t;
 
 std::array<int, STATE_SPACE_DIM> snapToGrid(AStarNode* nodeToSnap);
 

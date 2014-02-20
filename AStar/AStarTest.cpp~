@@ -8,9 +8,9 @@
 #include <ctime>
 
 #define MAX_STEPS 10000
-
 int main(int argc, char** argv)
 {
+
     clock_t start;
     start = std::clock();
 //    omp_set_num_threads(4);
@@ -20,26 +20,47 @@ int main(int argc, char** argv)
     std::priority_queue<AStarNode*, std::vector<AStarNode*>, AStarNodePtrCompare> openQueue;
     std::vector<AStarNode*> expandedNodes;
     map_t grid;
+    grid.clear();
     StateVector_t initState;
-    initState << 0.0,0.0,0.0,0.0,0.0,0.0;
+    initState << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
     StateVector_t goalState;
     goalState << -0.2, -0.0525, 0.1, 0.0245, 0.4115, 0.8511;
-
     AStarNode* currentNode; //Temporary node to hold whats in The queue
     AStarNode* bestNode;
     currentNode = new AStarNode(initState, goalState);
-    grid[snapToGrid(currentNode)] = currentNode;
+    std::array<int, STATE_SPACE_DIM> tmpArray = snapToGrid(currentNode);
+    std::array<int, STATE_SPACE_DIM>::iterator it;
+    for(it = tmpArray.begin();
+	it != tmpArray.end();
+	it++) {
+	std::cout<<*it<<std::endl;
+    }
+    AStarNode* tmpNode = currentNode;
+    std::cout<<"currentNode: "<<tmpNode<<std::endl;
+    std::cout<<tmpNode->getNodeState()<<std::endl;
+    std::cout<<"Count: ";
+    std::cout<<grid.count(tmpArray)<<std::endl;
+    bool insCheck = grid.insert(make_pair(tmpArray,tmpNode)).second;
+    std::cout<<"map ptr: "<<grid[tmpArray]<<std::endl;
+    tmpArray[0] = 2;
+    grid[tmpArray] = tmpNode;
+    std::cout<<"Count: "<<grid.count(tmpArray)<<std::endl;
+    std::cout<<"Size: "<<grid.size()<<std::endl;
+    std::cout<<insCheck<<std::endl;
+
+    int balsdf;
+    std::cin>>balsdf;
     bestNode = currentNode;
     bestEucDist = euclideanDistance(initState,goalState);
     openQueue.push(currentNode);
-
+    int badCount = 0;
     bool solFound = 0;
     int count = 0;
     while(!openQueue.empty() && !solFound && count < MAX_STEPS)
     {
 	count++;
-	if(count % 50 == 0)
-	    std::cout << "Step: " << count << std::endl;
+//	if(count % 50 == 0)
+//	    std::cout << "Step: " << count << std::endl;
 	//Pop the highest priority node (lowest cost)
 	currentNode = openQueue.top();
 	openQueue.pop();
@@ -48,6 +69,7 @@ int main(int argc, char** argv)
 		std::cout<<"Open node list is empty, nothing to search!"<<std::endl;
 		break;
 	    }
+	    badCount++;
 	    currentNode = openQueue.top();
 	    openQueue.pop();
 	}
@@ -111,5 +133,7 @@ int main(int argc, char** argv)
     }
     std::cout<<"Time: " << (std::clock() - start)/(double)CLOCKS_PER_SEC<<std::endl;
     std::cout<<"Grid size is: "<<grid.size()<<std::endl;
+    std::cout<<"Bad Count: "<<badCount<<std::endl;
+//    printBadCount();
     return 0;
 }

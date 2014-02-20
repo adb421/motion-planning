@@ -11,27 +11,28 @@
 #include <algorithm>
 #define  _USE_MATH_DEFINES
 #include <cmath>
-#include "Parameters.h"
+#include "AStar_Parameters.h"
 #include <omp.h>
 #include <complex>
 #include <map>
+#include <utility>
+
+void printBadCount();
 
 typedef Eigen::Matrix<double, STATE_SPACE_DIM,1> StateVector_t;
 typedef Eigen::Matrix<double, CONTROL_SPACE_DIM,1> ControlVector_t;
-
 struct mapCompare
 {
-    bool operator() (const std::array<int, STATE_SPACE_DIM>& lhs,		\
-		     const std::array<int, STATE_SPACE_DIM>& rhs) const
+    bool operator()							\
+	(const std::array<int, STATE_SPACE_DIM> &lhs,			\
+	 const std::array<int, STATE_SPACE_DIM> &rhs) const
 	{
-	    bool lessThan = true;
 	    for(int i = 0; i < STATE_SPACE_DIM; i++) {
 		if(lhs[i] > rhs[i]) {
-		    lessThan = false;
-		    break;
+		    return false;
 		}
 	    }
-	    return lessThan;
+	    return true;
 	}
 };
 
@@ -80,8 +81,8 @@ struct AStarNodePtrCompare
 };
 
 
+typedef std::map<std::array<int, STATE_SPACE_DIM>, AStarNode*, mapCompare> map_t;
 
-typedef std::map<std::array<int,STATE_SPACE_DIM>, AStarNode*, mapCompare> map_t;
 typedef std::pair<std::array<int, STATE_SPACE_DIM>, AStarNode*> pair_t;
 
 std::array<int, STATE_SPACE_DIM> snapToGrid(AStarNode* nodeToSnap);

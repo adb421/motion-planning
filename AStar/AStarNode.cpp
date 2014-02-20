@@ -4,18 +4,20 @@ void printBadCount() {
     std::cout<<badCount<<std::endl;
 }
 double Qf_array[STATE_SPACE_DIM*STATE_SPACE_DIM] =			\
-{1/pow((MAX_X - MIN_X),2), 0,   0, 0, 0, 0,				\
- 0,      1/pow((MAXVEL_XY*2),2), 0, 0, 0, 0,				\
- 0,       0,   1/pow((MAX_Y - MIN_Y),2), 0, 0, 0,			\
- 0,       0,   0,      1/pow((MAXVEL_XY*2),2), 0, 0,			\
- 0,       0,   0,      0,   1/pow((MAX_TH - MIN_TH),2), 0,		\
- 0,       0,   0,      0,   0,      1/pow((MAXVEL_TH*2),2)};
+{10000.0/pow((MAX_X - MIN_X),2), 0,   0, 0, 0, 0,				\
+ 0,      10000.0/pow((MAXVEL_XY*2),2), 0, 0, 0, 0,				\
+ 0,       0,   10000.0/pow((MAX_Y - MIN_Y),2), 0, 0, 0,			\
+ 0,       0,   0,      10000.0/pow((MAXVEL_XY*2),2), 0, 0,			\
+ 0,       0,   0,      0,   10000.0/pow((MAX_TH - MIN_TH),2), 0,		\
+ 0,       0,   0,      0,   0,      10000.0/pow((MAXVEL_TH*2),2)};
 
 // double R_array[9] = {1.0/pow(LO*2.0,2), 0,   0,	\
 // 		     0,   1.0/pow(MAX_FN-MIN_FN,2), 0,	\
 // 		     0,   0,   1.0/pow(MU*2.0,2)};
 //double r = 1000000.0;
 double r = 1;
+//double r = 100;
+//double r = 0.001;
 // double r = 0.0000001;
 //double r = 0.000000001;
 double R_array[CONTROL_SPACE_DIM*CONTROL_SPACE_DIM] =		\
@@ -139,25 +141,25 @@ std::vector<AStarNode*> AStarNode::expand(map_t &grid)
 			if(grid.count(snapToGrid(tempNode))==0) {
 			    tempChildren.push_back(tempNode);
 			    //Put it on the embedded grid
-			    grid.insert(pair_t(snapToGrid(tempNode),tempNode));
+			    grid.insert(make_pair(snapToGrid(tempNode),tempNode));
 //			    grid[snapToGrid(tempNode)] = tempNode;
-			    std::array<int, STATE_SPACE_DIM> tmp;
-			    tmp = snapToGrid(tempNode);
-			    std::cout<<"S:"<<std::endl;
-			    for(int ii = 0; ii < STATE_SPACE_DIM; ii++) 
-				std::cout<<tmp[ii]<<std::endl;
-			    std::cout<<"Count: "<<grid.count(tmp)<<std::endl;
-			    std::cout<<"Done."<<std::endl;
+			    // std::array<int, STATE_SPACE_DIM> tmp;
+			    // tmp = snapToGrid(tempNode);
+			    // std::cout<<"S:"<<std::endl;
+			    // for(int ii = 0; ii < STATE_SPACE_DIM; ii++) 
+			    // 	std::cout<<tmp[ii]<<std::endl;
+			    // std::cout<<"Count: "<<grid.count(tmp)<<std::endl;
+			    // std::cout<<"Done."<<std::endl;
 			}
-			else if(grid[snapToGrid(tempNode)]->getNodePriority() > tempNode->getNodePriority()){
-			    tempChildren.push_back(tempNode);
-			    grid[snapToGrid(tempNode)]->good = false;
-			    grid.erase(grid.find(snapToGrid(tempNode)));
-			    grid[snapToGrid(tempNode)] = tempNode;
+			// else if(grid[snapToGrid(tempNode)]->getNodePriority() > tempNode->getNodePriority()){
+			//     tempChildren.push_back(tempNode);
+			//     grid[snapToGrid(tempNode)]->good = false;
+			//     grid.erase(grid.find(snapToGrid(tempNode)));
+			//     grid[snapToGrid(tempNode)] = tempNode;
 
-			} else {
-//			else {
-//			    badCount++;
+			// } else {
+			else {
+			    badCount++;
 			    delete tempNode;
 			}
 		    }
@@ -215,7 +217,8 @@ AStarNode* AStarNode::spawn(ControlVector_t controlArray) {
 //	newCost += realCost(state, controlArray, goalState);
 	time += INT_TIME_STEP;
     }
-    return new AStarNode(this, state, controlArray, goalState, newCost, time);
+    AStarNode* tmp = new AStarNode(this, state, controlArray, goalState, newCost, time);
+    return tmp;
 }
 
 //Contact, normal, tangent - control
@@ -236,64 +239,65 @@ ControlVector_t MapControlToWorld(StateVector_t state, ControlVector_t controlAr
 
 double costToGo(StateVector_t state, StateVector_t goalState)
 {
+    return 0.0;
     // StateVector_t errorVec = state - goalState;
 
 
     // double stateCost = (errorVec.transpose()*Qf*errorVec)(0,0);
     // return stateCost;
-    double minTime = minTimePoly(getMinTimeCoefficients(state, goalState));
-    double cost;
-    if(minTime < 0)
-	cost = HIGH_COST;
-    else {
-	double x01 = state(0,0);
-	double x02 = state(1,0);
-	double x03 = state(2,0);
-	double x04 = state(3,0);
-	double x05 = state(4,0);
-	double x06 = state(5,0);
-	double x11 = goalState(0,0);
-	double x12 = goalState(1,0);
-	double x13 = goalState(2,0);
-	double x14 = goalState(3,0);
-	double x15 = goalState(4,0);
-	double x16 = goalState(5,0);
-	double x5 = state(4,0); //Theta linearized about
-	cost = (4.0*pow(minTime,4) + (r*(pow(MO,2)*(pow(GRAV,2)*pow(minTime,4) + 12.0*(-pow(x01,2) + pow(x03,2)) + \
-						    2.0*GRAV*pow(minTime,3)*(-x04 + x14) + 4.0*(3.0*(2.0*x01*x11 - pow(x11,2) - 2.0*x03*x13 + pow(x13,2)) + \
-												pow(minTime,2)*(-pow(x02,2) + pow(x04,2) - x02*x12 - pow(x12,2) + x04*x14 + pow(x14,2)) - \
-												3.0*minTime*((x01 - x11)*(x02 + x12) - (x03 - x13)*(x04 + x14))))*(-pow(WO,2) + (-2.0*pow(LO,2) + pow(WO,2))*cos(2.0*BETA))* \
-					 cos(2.0*x5)*pow(1.0/sin(2.0*BETA),2) - 4.0*JO*MO*WO*(6.0*x11*(-x05 + x15) + pow(minTime,2)*(2.0*x02*x06 + x06*x12 + x02*x16 + 2.0*x12*x16) + \
-											      3.0*x01*(2.0*x05 - 2.0*x15 + minTime*(x06 + x16)) + 3.0*minTime*((x02 + x12)*(x05 - x15) - x11*(x06 + x16)))*cos(x5)*pow(1.0/cos(BETA),2) \
-					 + (pow(LO,2)*pow(MO,2)*(pow(GRAV,2)*pow(minTime,4) + 12.0*(pow(x01,2) + pow(x03,2)) + \
-								 2.0*GRAV*pow(minTime,3)*(-x04 + x14) + 4.0* \
-								 (3.0*(-2.0*x01*x11 + pow(x11,2) - 2.0*x03*x13 + pow(x13,2)) + \
-								  pow(minTime,2)*(pow(x02,2) + pow(x04,2) + x02*x12 + pow(x12,2) + x04*x14 + pow(x14,2)) + \
-								  3.0*minTime*((x01 - x11)*(x02 + x12) + (x03 - x13)*(x04 + x14))))*pow(1.0/sin(BETA),2) + \
-					    (pow(GRAV,2)*pow(minTime,4)*pow(MO,2)*(pow(LO,2) + pow(WO,2)) - \
-					     2.0*GRAV*pow(minTime,3)*pow(MO,2)*(pow(LO,2) + pow(WO,2))*(x04 - x14) + \
-					     4.0*(6.0*pow(JO,2)*pow(x05,2) + pow(LO,2)*pow(MO,2)* \
-						  (3.0*pow(x01,2) + 3.0*x01*(-2.0*x11 + minTime*(x02 + x12)) + 3.0*(pow(x11,2) + pow(x03 - x13,2)) + \
-						   pow(minTime,2)*(pow(x02,2) + pow(x04,2) + x02*x12 + pow(x12,2) + x04*x14 + pow(x14,2)) - \
-						   3.0*minTime*(x11*(x02 + x12) - (x03 - x13)*(x04 + x14))) + \
-						  pow(MO,2)*pow(WO,2)*(3*pow(x01,2) + 3.0*x01*(-2.0*x11 + minTime*(x02 + x12)) + 3.0*(pow(x11,2) + pow(x03 - x13,2)) + \
-								       pow(minTime,2)*(pow(x02,2) + pow(x04,2) + x02*x12 + pow(x12,2) + x04*x14 + pow(x14,2)) - \
-								       3.0*minTime*(x11*(x02 + x12) - (x03 - x13)*(x04 + x14))) + \
-						  2.0*pow(JO,2)*(3.0*x15*(-2.0*x05 + x15) + 3.0*minTime*(x05 - x15)*(x06 + x16) + \
-								 pow(minTime,2)*(pow(x06,2) + x06*x16 + pow(x16,2)))))*pow(1.0/cos(BETA),2))/2.0 - 
-					 2.0*JO*MO*WO*(12.0*x13*(-x05 + x15) + GRAV*pow(minTime,3)*(-x06 + x16) + \
-						       2.0*pow(minTime,2)*(2.0*x04*x06 + x06*x14 + x04*x16 + 2.0*x14*x16) + 6.0*x03*(2.0*x05 - 2.0*x15 + minTime*(x06 + x16)) + \
-						       6.0*minTime*((x04 + x14)*(x05 - x15) - x13*(x06 + x16)))*pow(1.0/cos(BETA),2)*sin(x5) + \
-					 2.0*pow(MO,2)*(-12.0*x01*x03 + GRAV*pow(minTime,3)*(x02 - x12) + 12.0*(x03*x11 + (x01 - x11)*x13) - \
-							6.0*minTime*((x02 + x12)*(x03 - x13) + (x01 - x11)*(x04 + x14)) - 2.0*pow(minTime,2)*(x02*(2.0*x04 + x14) + x12*(x04 + 2.0*x14)))* \
-					 (-pow(WO,2) + (-2.0*pow(LO,2) + pow(WO,2))*cos(2.0*BETA))*pow(1.0/sin(2.0*BETA),2)*sin(2.0*x5)))/pow(LO,2))/(4.0*pow(minTime,3));
-    }
-    if(cost < 0.0) {
-	std::cout<<cost<<", "<<minTime<<std::endl;
-	std::cout<<"x0: "<<state<<std::endl;
-	std::cout<<"x1: "<<goalState<<std::endl;
-    }
-    return cost;
+    // double minTime = minTimePoly(getMinTimeCoefficients(state, goalState));
+    // double cost;
+    // if(minTime < 0)
+    // 	cost = HIGH_COST;
+    // else {
+    // 	double x01 = state(0,0);
+    // 	double x02 = state(1,0);
+    // 	double x03 = state(2,0);
+    // 	double x04 = state(3,0);
+    // 	double x05 = state(4,0);
+    // 	double x06 = state(5,0);
+    // 	double x11 = goalState(0,0);
+    // 	double x12 = goalState(1,0);
+    // 	double x13 = goalState(2,0);
+    // 	double x14 = goalState(3,0);
+    // 	double x15 = goalState(4,0);
+    // 	double x16 = goalState(5,0);
+    // 	double x5 = state(4,0); //Theta linearized about
+    // 	cost = (4.0*pow(minTime,4) + (r*(pow(MO,2)*(pow(GRAV,2)*pow(minTime,4) + 12.0*(-pow(x01,2) + pow(x03,2)) + \
+    // 						    2.0*GRAV*pow(minTime,3)*(-x04 + x14) + 4.0*(3.0*(2.0*x01*x11 - pow(x11,2) - 2.0*x03*x13 + pow(x13,2)) + \
+    // 												pow(minTime,2)*(-pow(x02,2) + pow(x04,2) - x02*x12 - pow(x12,2) + x04*x14 + pow(x14,2)) - \
+    // 												3.0*minTime*((x01 - x11)*(x02 + x12) - (x03 - x13)*(x04 + x14))))*(-pow(WO,2) + (-2.0*pow(LO,2) + pow(WO,2))*cos(2.0*BETA))* \
+    // 					 cos(2.0*x5)*pow(1.0/sin(2.0*BETA),2) - 4.0*JO*MO*WO*(6.0*x11*(-x05 + x15) + pow(minTime,2)*(2.0*x02*x06 + x06*x12 + x02*x16 + 2.0*x12*x16) + \
+    // 											      3.0*x01*(2.0*x05 - 2.0*x15 + minTime*(x06 + x16)) + 3.0*minTime*((x02 + x12)*(x05 - x15) - x11*(x06 + x16)))*cos(x5)*pow(1.0/cos(BETA),2) \
+    // 					 + (pow(LO,2)*pow(MO,2)*(pow(GRAV,2)*pow(minTime,4) + 12.0*(pow(x01,2) + pow(x03,2)) + \
+    // 								 2.0*GRAV*pow(minTime,3)*(-x04 + x14) + 4.0* \
+    // 								 (3.0*(-2.0*x01*x11 + pow(x11,2) - 2.0*x03*x13 + pow(x13,2)) + \
+    // 								  pow(minTime,2)*(pow(x02,2) + pow(x04,2) + x02*x12 + pow(x12,2) + x04*x14 + pow(x14,2)) + \
+    // 								  3.0*minTime*((x01 - x11)*(x02 + x12) + (x03 - x13)*(x04 + x14))))*pow(1.0/sin(BETA),2) + \
+    // 					    (pow(GRAV,2)*pow(minTime,4)*pow(MO,2)*(pow(LO,2) + pow(WO,2)) - \
+    // 					     2.0*GRAV*pow(minTime,3)*pow(MO,2)*(pow(LO,2) + pow(WO,2))*(x04 - x14) + \
+    // 					     4.0*(6.0*pow(JO,2)*pow(x05,2) + pow(LO,2)*pow(MO,2)* \
+    // 						  (3.0*pow(x01,2) + 3.0*x01*(-2.0*x11 + minTime*(x02 + x12)) + 3.0*(pow(x11,2) + pow(x03 - x13,2)) + \
+    // 						   pow(minTime,2)*(pow(x02,2) + pow(x04,2) + x02*x12 + pow(x12,2) + x04*x14 + pow(x14,2)) - \
+    // 						   3.0*minTime*(x11*(x02 + x12) - (x03 - x13)*(x04 + x14))) + \
+    // 						  pow(MO,2)*pow(WO,2)*(3*pow(x01,2) + 3.0*x01*(-2.0*x11 + minTime*(x02 + x12)) + 3.0*(pow(x11,2) + pow(x03 - x13,2)) + \
+    // 								       pow(minTime,2)*(pow(x02,2) + pow(x04,2) + x02*x12 + pow(x12,2) + x04*x14 + pow(x14,2)) - \
+    // 								       3.0*minTime*(x11*(x02 + x12) - (x03 - x13)*(x04 + x14))) + \
+    // 						  2.0*pow(JO,2)*(3.0*x15*(-2.0*x05 + x15) + 3.0*minTime*(x05 - x15)*(x06 + x16) + \
+    // 								 pow(minTime,2)*(pow(x06,2) + x06*x16 + pow(x16,2)))))*pow(1.0/cos(BETA),2))/2.0 - 
+    // 					 2.0*JO*MO*WO*(12.0*x13*(-x05 + x15) + GRAV*pow(minTime,3)*(-x06 + x16) + \
+    // 						       2.0*pow(minTime,2)*(2.0*x04*x06 + x06*x14 + x04*x16 + 2.0*x14*x16) + 6.0*x03*(2.0*x05 - 2.0*x15 + minTime*(x06 + x16)) + \
+    // 						       6.0*minTime*((x04 + x14)*(x05 - x15) - x13*(x06 + x16)))*pow(1.0/cos(BETA),2)*sin(x5) + \
+    // 					 2.0*pow(MO,2)*(-12.0*x01*x03 + GRAV*pow(minTime,3)*(x02 - x12) + 12.0*(x03*x11 + (x01 - x11)*x13) - \
+    // 							6.0*minTime*((x02 + x12)*(x03 - x13) + (x01 - x11)*(x04 + x14)) - 2.0*pow(minTime,2)*(x02*(2.0*x04 + x14) + x12*(x04 + 2.0*x14)))* \
+    // 					 (-pow(WO,2) + (-2.0*pow(LO,2) + pow(WO,2))*cos(2.0*BETA))*pow(1.0/sin(2.0*BETA),2)*sin(2.0*x5)))/pow(LO,2))/(4.0*pow(minTime,3));
+    // }
+    // if(cost < 0.0) {
+    // 	std::cout<<cost<<", "<<minTime<<std::endl;
+    // 	std::cout<<"x0: "<<state<<std::endl;
+    // 	std::cout<<"x1: "<<goalState<<std::endl;
+    // }
+//    return cost;
 }
 
 StateVector_t OneStep(StateVector_t state, ControlVector_t worldControl) {
@@ -313,10 +317,11 @@ double realCost(StateVector_t state, ControlVector_t controlArray, StateVector_t
     double controlCost = \
 	(controlArray.transpose()*Rf*controlArray)(0,0);
 
-    // double stateCost =						\
-    // 	((state - goalState).transpose()*Qf*(state - goalState))(0,0);
-    // return (controlCost + 1 + stateCost)*INT_TIME_STEP;
-    return (controlCost + 1)*INT_TIME_STEP;
+    double stateCost =							\
+    	((state - goalState).transpose()*Qf*(state - goalState))(0,0);
+//    return (controlCost + 1 + stateCost)*INT_TIME_STEP;
+//    return (controlCost + 1)*INT_TIME_STEP;
+    return (controlCost + stateCost)*INT_TIME_STEP;
 }
 
 //Coeffs go a + b t + c t^2 + d t^3 + e t^4 , [a, b, c, d, e]

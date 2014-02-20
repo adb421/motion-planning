@@ -10,7 +10,6 @@
 #define MAX_STEPS 10000
 int main(int argc, char** argv)
 {
-
     clock_t start;
     start = std::clock();
 //    omp_set_num_threads(4);
@@ -20,6 +19,9 @@ int main(int argc, char** argv)
     std::priority_queue<AStarNode*, std::vector<AStarNode*>, AStarNodePtrCompare> openQueue;
     std::vector<AStarNode*> expandedNodes;
     map_t grid;
+//    std::map<std::array<int, STATE_SPACE_DIM>, int*, mapCompare> grid_2;
+//    std::map<std::array<int, STATE_SPACE_DIM>, int*> grid_2;
+//    grid_2.clear();
     grid.clear();
     StateVector_t initState;
     initState << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
@@ -27,29 +29,28 @@ int main(int argc, char** argv)
     goalState << -0.2, -0.0525, 0.1, 0.0245, 0.4115, 0.8511;
     AStarNode* currentNode; //Temporary node to hold whats in The queue
     AStarNode* bestNode;
+//    int* newInt;
+//    newInt = new int(2);
+//    AStarNode rootNode(initState, goalState);
     currentNode = new AStarNode(initState, goalState);
+//    currentNode = &rootNode;
     std::array<int, STATE_SPACE_DIM> tmpArray = snapToGrid(currentNode);
-    std::array<int, STATE_SPACE_DIM>::iterator it;
-    for(it = tmpArray.begin();
-	it != tmpArray.end();
-	it++) {
-	std::cout<<*it<<std::endl;
-    }
-    AStarNode* tmpNode = currentNode;
-    std::cout<<"currentNode: "<<tmpNode<<std::endl;
-    std::cout<<tmpNode->getNodeState()<<std::endl;
-    std::cout<<"Count: ";
-    std::cout<<grid.count(tmpArray)<<std::endl;
-    bool insCheck = grid.insert(make_pair(tmpArray,tmpNode)).second;
-    std::cout<<"map ptr: "<<grid[tmpArray]<<std::endl;
-    tmpArray[0] = 2;
-    grid[tmpArray] = tmpNode;
+//    std::array<int, STATE_SPACE_DIM> tmpArray = {0, 0, 0, 0, 0, 0};
+    std::cout<<"currentNode: "<<currentNode<<std::endl;
+    std::cout<<"Count: "<<grid.count(tmpArray)<<std::endl;
+    bool insCheck =grid.insert(std::make_pair(tmpArray,currentNode)).second;
+//    std::cout<<"map ptr: "<<grid[tmpArray]<<std::endl;
     std::cout<<"Count: "<<grid.count(tmpArray)<<std::endl;
     std::cout<<"Size: "<<grid.size()<<std::endl;
     std::cout<<insCheck<<std::endl;
+    std::cout<<"State: "<<grid[tmpArray]->getNodeState()<<std::endl;
+    auto it = grid.find(tmpArray);
+    if( it == grid.end() )
+	std::cout<<"Did not find it." << std::endl;
+    else
+	std::cout<<"Found it."<<std::endl;
+//    delete newInt;
 
-    int balsdf;
-    std::cin>>balsdf;
     bestNode = currentNode;
     bestEucDist = euclideanDistance(initState,goalState);
     openQueue.push(currentNode);
@@ -90,6 +91,9 @@ int main(int argc, char** argv)
 	{
 	    openQueue.push(expandedNodes.back());
 	    expandedNodes.pop_back();
+	}
+	if(openQueue.empty()) {
+	    std::cout<<"Empty queue!"<<std::endl;
 	}
     }
     if(euclideanDistance(currentNode->getNodeState(),goalState) < bestEucDist) {
