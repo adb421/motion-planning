@@ -81,14 +81,7 @@ StateVector_t OneStep(StateVector_t state, ControlVector_t worldControl);
 
 double realCost(StateVector_t state, ControlVector_t controlArray, StateVector_t prevState, StateVector_t goalState);
 
-Eigen::VectorXcd polynomialRoots(std::array<double,5> coeffs);
-//void polynomialRoots(std::array<double,5> coeffs);
-
-double minTimePoly(std::array<double,5> coeffs);
-
 int violateConstraints(AStarNode* checkNode);
-
-std::array<double,5> getMinTimeCoefficients(StateVector_t x0, StateVector_t x1);
 
 double euclideanDistance(StateVector_t state1, StateVector_t state2);
     
